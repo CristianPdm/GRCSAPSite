@@ -1,0 +1,3 @@
+CD a esta carpeta
+.venv\Scripts\actívate
+Python Run.py
