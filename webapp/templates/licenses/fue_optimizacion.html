@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Optimización FUE{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/fue_optimizacion.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Candidatos a baja de licencia (usuarios inactivos con FUE pagado) y a downgrade (FUE oficial mayor al que correspondería por sus roles activos).</p>
+<p class="backLink"><a href="{{ url_for('licenses.index') }}">Volver al módulo de Licencias</a></p>
+{% if license_updated %}
+<p class="dataFreshness">Último acceso según FUE_Users.xlsx, actualizado el <strong>{{ (license_updated|local_dt).strftime('%d/%m/%Y %H:%M') }}</strong>.</p>
+{% endif %}
+
+<div class="fueOptKpi">
+  <div class="fueOptKpi__card">
+    <span class="fueOptKpi__value {{ 'fueOptKpi__value--ok' if opt.total_savings > 0 else 'fueOptKpi__value--neutral' }}">{{ '%.2f'|format(opt.total_savings) }}</span>
+    <span class="fueOptKpi__label">FUE potencial de ahorro</span>
+    <span class="fueOptKpi__sub">Si se aplican todos los cambios</span>
+  </div>
+  <div class="fueOptKpi__card">
+    <span class="fueOptKpi__value {{ 'fueOptKpi__value--crit' if opt.inactive|length > 0 else 'fueOptKpi__value--ok' }}">{{ opt.inactive|length }}</span>
+    <span class="fueOptKpi__label">Inactivos &gt; 90 días</span>
+    <span class="fueOptKpi__sub">Candidatos a baja</span>
+  </div>
+  <div class="fueOptKpi__card">
+    <span class="fueOptKpi__value {{ 'fueOptKpi__value--warn' if opt.downgrade|length > 0 else 'fueOptKpi__value--ok' }}">{{ opt.downgrade|length }}</span>
+    <span class="fueOptKpi__label">Candidatos a downgrade</span>
+    <span class="fueOptKpi__sub">FUE excede uso real</span>
+  </div>
+  <div class="fueOptKpi__card">
+    <span class="fueOptKpi__value fueOptKpi__value--neutral">{{ '%.2f'|format(opt.total_inactive_savings) }}</span>
+    <span class="fueOptKpi__label">FUE por inactivaciones</span>
+    <span class="fueOptKpi__sub">{{ '%.2f'|format(opt.total_downgrade_savings) }} FUE por downgrades</span>
+  </div>
+</div>
+
+<div class="fueOptSection">
+  <div class="fueOptSection__header">
+    <h2 class="fueOptSection__title">Inactivos con FUE pagado</h2>
+    {% if opt.inactive %}
+    <div class="filterBar" data-filter-scope="fue-opt-ia-list">
+      <select class="filterBar__select" data-filter-field="ia2" data-filter-mode="token">
+        <option value="">Más de 90 días</option>
+        <option value="180">Más de 180 días</option>
+        <option value="365">Más de 365 días</option>
+      </select>
+      <span class="filterBar__count" id="fue-opt-ia-list-count"></span>
+    </div>
+    {% endif %}
+  </div>
+  {% if opt.inactive %}
+  <table id="fue-opt-ia-list">
+    <thead>
+      <tr>
+        <th>Usuario</th><th>Nombre</th><th>FUE asignado en SAP</th><th>Peso FUE</th>
+        <th>Último acceso</th><th>Días sin acceso</th><th>Roles activos</th><th>Nivel SOD</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in opt.inactive %}
+      {% set ia_tokens = [] %}
+      {% if u.days > 180 %}{% set _ = ia_tokens.append('180') %}{% endif %}
+      {% if u.days > 365 %}{% set _ = ia_tokens.append('365') %}{% endif %}
+      <tr data-filter-item data-f-ia2="{{ ia_tokens|join(' ') }}">
+        <td class="fueOptSection__user">{{ u.user }}</td>
+        <td>{{ u.nombre or '—' }}</td>
+        <td><span class="licTypeBadge licTypeBadge--{{ u.fue_code|lower }}">{{ u.fue_type }}</span></td>
+        <td class="fueOptDays fueOptDays--high">{{ '%.3f'|format(u.fue_weight) }}</td>
+        <td>{{ u.last_access.strftime('%d/%m/%Y') if u.last_access else '—' }}</td>
+        <td class="fueOptDays {{ 'fueOptDays--high' if u.days > 180 else 'fueOptDays--medium' }}">{{ u.days }}d</td>
+        <td>
+          {% if u.has_roles %}<span class="fueOptRolesFlag--warn">&#9888; Sí</span>{% else %}<span class="fueOptRolesFlag--ok">&check; No</span>{% endif %}
+        </td>
+        <td><span class="sodLevelBadge sodLevelBadge--{{ u.mx|lower }}">{{ u.mx }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="fueOptEmpty isHidden" id="fue-opt-ia-list-empty">Sin usuarios inactivos para el umbral seleccionado.</p>
+  {% else %}
+  <p class="fueOptEmpty">Sin usuarios inactivos con FUE pagado.</p>
+  {% endif %}
+</div>
+
+<div class="fueOptSection">
+  <div class="fueOptSection__header">
+    <h2 class="fueOptSection__title">Candidatos a downgrade</h2>
+  </div>
+  {% if opt.downgrade %}
+  <table>
+    <thead>
+      <tr>
+        <th>Usuario</th><th>Nombre</th><th>FUE en SAP</th><th>FUE por roles</th><th>FUE sugerido</th><th>Ahorro FUE</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in opt.downgrade %}
+      <tr>
+        <td class="fueOptSection__user">{{ u.user }}</td>
+        <td>{{ u.nombre or '—' }}</td>
+        <td>{{ u.current_fue or '—' }}</td>
+        <td><span class="licTypeBadge licTypeBadge--{{ u.derived_code|lower }}">{{ u.derived_label }}</span></td>
+        <td>{{ u.suggested_fue }}</td>
+        <td class="fueOptSavings">+{{ '%.3f'|format(u.savings) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="fueOptEmpty">Sin candidatos a downgrade. Importa FUE_Users.xlsx en Licencias y AGR_USERS/AGR_1251 en SOD para habilitar este análisis.</p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

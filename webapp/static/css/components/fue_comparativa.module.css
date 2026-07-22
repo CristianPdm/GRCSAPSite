@@ -1,0 +1,69 @@
+/* Estilos exclusivos de templates/licenses/fue_comparativa.html */
+
+.fueCmpTable {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.fueCmpTable table {
+  font-size: 13px;
+}
+
+.fueCmpTable th {
+  text-align: left;
+  background-color: var(--color-bg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.fueCmpTable td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.fueCmpTable__user {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.fueCmpTable__nombre {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.fueCmpSitu {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fueCmpSitu--equal { color: var(--color-success); }
+.fueCmpSitu--over { color: var(--color-warning); }
+.fueCmpSitu--under { color: var(--color-error); }
+.fueCmpSitu--noroles { color: var(--color-text-muted); font-weight: 400; }
+
+.fueCmpPill {
+  font-size: 11px;
+  font-family: monospace;
+  background-color: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  margin-right: var(--spacing-xs);
+  display: inline-block;
+}
+
+.fueCmpDash {
+  color: var(--color-text-muted);
+}
+
+.fueCmpEmpty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: var(--spacing-md);
+}

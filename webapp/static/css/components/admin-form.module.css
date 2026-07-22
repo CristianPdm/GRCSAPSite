@@ -1,0 +1,70 @@
+/* Estilos exclusivos de formularios administrativos
+   (templates/admin/user_form.html, role_form.html) */
+
+.adminForm {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-lg);
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.adminForm__label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-sm);
+}
+
+.adminForm__input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.adminForm__permissions {
+  margin-top: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.adminForm__checkboxLabel {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.adminForm__actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  align-items: center;
+}
+
+.adminForm__submit {
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.adminForm__submit:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.adminForm__cancel {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

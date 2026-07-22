@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar rol" if role else "Nuevo rol" }}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-form.module.css') }}">
+{% endblock %}
+{% block content %}
+<form class="adminForm" method="POST">
+  <label class="adminForm__label" for="name">Nombre del rol</label>
+  <input class="adminForm__input" type="text" id="name" name="name" value="{{ role.name if role else '' }}" required>
+
+  <label class="adminForm__label" for="description">Descripción</label>
+  <input class="adminForm__input" type="text" id="description" name="description" value="{{ role.description if role else '' }}">
+
+  <fieldset class="adminForm__permissions">
+    <legend>Permisos</legend>
+    {% for field, label in permission_fields %}
+      <label class="adminForm__checkboxLabel">
+        <input type="checkbox" name="{{ field }}" {{ "checked" if role and role[field] else "" }}>
+        {{ label }}
+      </label>
+    {% endfor %}
+  </fieldset>
+
+  <div class="adminForm__actions">
+    <button class="adminForm__submit" type="submit">Guardar</button>
+    <a class="adminForm__cancel" href="{{ url_for('admin.roles') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

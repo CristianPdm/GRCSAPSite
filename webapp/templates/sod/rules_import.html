@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Importar Matriz SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('sod.reglas') }}">Volver a Matriz de reglas</a></p>
+
+<div class="sodImportGrid">
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">Archivo JSON de la matriz</h2>
+    <p class="sodImportCard__count">
+      Acepta un archivo exportado con "Exportar JSON" (desde esta app o desde
+      SAP_SOD_Analyzer_v640.html). La importación <strong>reemplaza por completo</strong>
+      las reglas actuales: no se fusiona con la matriz existente.
+    </p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".json" required>
+      <button class="sodImportCard__submit" type="submit">Importar y reemplazar matriz</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">Archivo Excel de la matriz</h2>
+    <p class="sodImportCard__count">
+      Acepta el mismo archivo que genera "Exportar Excel" (columnas ID, Módulo,
+      Nivel de Riesgo, Descripción, Proceso A, TCodes A, Proceso B, TCodes B,
+      Estado, Origen). Pensado para que Auditoría descargue la matriz, la edite
+      en Excel y la vuelva a subir. Las apps Fiori se escriben igual que un
+      tcode clásico, separadas por comas en TCodes A/TCodes B. La importación
+      <strong>reemplaza por completo</strong> las reglas actuales.
+    </p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data"
+          action="{{ url_for('sod.reglas_importar_excel') }}">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar y reemplazar matriz</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% import "_icons.html" as icons %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/topbar.module.css') }}">
+<header class="topbar">
+  <label class="topbar__menuBtn" for="navToggle" aria-label="Mostrar/ocultar menú">
+    {{ icons.icon('menu', 20) }}
+  </label>
+
+  <h1 class="topbar__pageTitle">{{ page_title }}</h1>
+
+  <div class="topbar__user">
+    <span class="topbar__roleBadge">{{ current_user.role.name }}</span>
+    <span class="topbar__userInfo">
+      <span class="topbar__userName">{{ current_user.full_name or current_user.username }}</span>
+    </span>
+    <a class="topbar__logout" href="{{ url_for('auth.cambiar_contrasena') }}" title="Cambiar contraseña">
+      {{ icons.icon('key', 17) }}
+    </a>
+    <a class="topbar__logout" href="{{ url_for('auth.logout') }}" title="Cerrar sesión">
+      {{ icons.icon('logout', 17) }}
+    </a>
+  </div>
+</header>

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}403 - Acceso denegado{% endblock %}
+{% block content %}
+<p>No tienes permisos para acceder a esta página.</p>
+<p class="backLink"><a href="{{ url_for('main.dashboard') }}">Volver al panel</a></p>
+{% endblock %}

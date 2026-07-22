@@ -1,0 +1,61 @@
+/* Barra de filtros/busqueda reutilizable para listados (tablas o grupos
+   de tarjetas). Se combina con static/js/table-filters.js, que es el que
+   decide que filas/items quedan visibles segun los valores ingresados
+   aqui (atributos data-filter-field / data-f-*). */
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  align-items: center;
+}
+
+.filterBar__input,
+.filterBar__select {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.filterBar__input {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.filterBar__select {
+  flex: 0 1 170px;
+}
+
+.filterBar__input:focus,
+.filterBar__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.filterBar__count {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Fila/aviso "sin resultados para el filtro" -- distinto del "todavia no
+   hay datos" que ya maneja cada plantilla con un {% else %} de Jinja. */
+.filterBar__emptyRow td,
+.filterBar__empty {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: 13px;
+}

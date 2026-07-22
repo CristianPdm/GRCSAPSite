@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" type="image/png" sizes="any" href="{{ url_for('static', filename='img/escudo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block styles %}{% endblock %}
+</head>
+<body>
+  {% if current_user.is_authenticated %}
+  <div class="appShell">
+    <input type="checkbox" id="navToggle" class="appShell__navToggle">
+    {% include "_sidebar.html" %}
+    <div class="appShell__body">
+      {% set page_title = self.title() %}
+      {% include "_topbar.html" %}
+      <main class="appShell__main">
+  {% else %}
+  <main class="pageContainer">
+  {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flashList">
+              {% for category, message in messages %}
+                <div class="flashMessage flashMessage--{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+  {% if current_user.is_authenticated %}
+      </main>
+    </div>
+  </div>
+  {% else %}
+  </main>
+  {% endif %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

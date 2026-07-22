@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar regla " + rule.id if rule else "Nueva regla SOD" }}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-form.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/tcode-picker.module.css') }}">
+{% endblock %}
+{% block content %}
+<form class="adminForm" method="POST">
+  {% if not rule %}
+  <label class="adminForm__label" for="id">ID de la regla (ej. MM-013)</label>
+  <input class="adminForm__input" type="text" id="id" name="id" required>
+  {% endif %}
+
+  <label class="adminForm__label" for="modulo">Módulo</label>
+  <input class="adminForm__input" type="text" id="modulo" name="modulo" value="{{ rule.modulo if rule else '' }}">
+
+  <label class="adminForm__label" for="nivel">Nivel</label>
+  <select class="adminForm__input" id="nivel" name="nivel">
+    {% for nivel in ["CRITICO", "ALTO", "MEDIO"] %}
+      <option value="{{ nivel }}" {{ "selected" if rule and rule.nivel == nivel else "" }}>{{ nivel }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="adminForm__label" for="descripcion">Descripción</label>
+  <input class="adminForm__input" type="text" id="descripcion" name="descripcion" value="{{ rule.descripcion if rule else '' }}" required>
+
+  <label class="adminForm__label" for="permiso1">Permiso / proceso lado A</label>
+  <input class="adminForm__input" type="text" id="permiso1" name="permiso1" value="{{ rule.permiso1 if rule else '' }}">
+
+  <label class="adminForm__label" for="tc-search-1">Transacciones lado A</label>
+  <div class="tcPicker" data-tc-picker data-tc-source="{{ url_for('sod.tcodes_json') }}"
+       data-tc-initial="{{ rule.tcodes1_list()|join(',') if rule else '' }}">
+    <div class="tcPicker__tags" data-tc-tags></div>
+    <div class="tcPicker__searchWrap">
+      <input class="tcPicker__search" id="tc-search-1" type="text" data-tc-search
+             autocomplete="off" placeholder="Buscar o escribir TCode...">
+      <div class="tcPicker__drop isHidden" data-tc-drop></div>
+    </div>
+    <input type="hidden" name="tcodes1" data-tc-hidden>
+  </div>
+
+  <label class="adminForm__label" for="permiso2">Permiso / proceso lado B</label>
+  <input class="adminForm__input" type="text" id="permiso2" name="permiso2" value="{{ rule.permiso2 if rule else '' }}">
+
+  <label class="adminForm__label" for="tc-search-2">Transacciones lado B</label>
+  <div class="tcPicker" data-tc-picker data-tc-source="{{ url_for('sod.tcodes_json') }}"
+       data-tc-initial="{{ rule.tcodes2_list()|join(',') if rule else '' }}">
+    <div class="tcPicker__tags" data-tc-tags></div>
+    <div class="tcPicker__searchWrap">
+      <input class="tcPicker__search" id="tc-search-2" type="text" data-tc-search
+             autocomplete="off" placeholder="Buscar o escribir TCode...">
+      <div class="tcPicker__drop isHidden" data-tc-drop></div>
+    </div>
+    <input type="hidden" name="tcodes2" data-tc-hidden>
+  </div>
+
+  <div class="adminForm__actions">
+    <button class="adminForm__submit" type="submit">Guardar</button>
+    <a class="adminForm__cancel" href="{{ url_for('sod.reglas') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tcode-picker.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+instance/*.db
+instance/*.db.bak_*
+.venv/
+venv/
+.env
+dist/
+err.log
+test_marker.txt
+__writetest.tmp
+Notas_CP.txt

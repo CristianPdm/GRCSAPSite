@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="adminHeader">
+  <a class="adminHeader__action" href="{{ url_for('admin.user_new') }}">+ Nuevo usuario</a>
+</div>
+
+<table class="adminTable">
+  <thead>
+    <tr>
+      <th>Usuario</th>
+      <th>Nombre completo</th>
+      <th>Email</th>
+      <th>Rol</th>
+      <th>Estado</th>
+      <th>Último acceso</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ u.full_name }}</td>
+      <td>{{ u.email or "-" }}</td>
+      <td>{{ u.role.name if u.role else "-" }}</td>
+      <td>
+        <span class="adminTable__badge adminTable__badge--{{ 'on' if u.is_active_user else 'off' }}">
+          {{ "Activo" if u.is_active_user else "Deshabilitado" }}
+        </span>
+      </td>
+      <td>{{ u.last_login_at.strftime("%Y-%m-%d %H:%M") if u.last_login_at else "Nunca" }}</td>
+      <td class="adminTable__actions">
+        <a href="{{ url_for('admin.user_edit', user_id=u.id) }}">Editar</a>
+        <form class="adminTable__inlineForm" method="POST" action="{{ url_for('admin.user_toggle_active', user_id=u.id) }}">
+          <button type="submit" class="adminTable__linkButton">
+            {{ "Deshabilitar" if u.is_active_user else "Habilitar" }}
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

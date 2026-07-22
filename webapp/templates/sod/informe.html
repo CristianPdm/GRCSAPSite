@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Informe GRC-SOD · Grupo Simpa · {{ ahora.strftime('%Y-%m-%d') }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components/informe.module.css') }}">
+</head>
+<body>
+  <div class="informeToolbar noPrint">
+    <span class="informeToolbar__title">Informe GRC-SOD · Grupo Simpa S.A. · {{ ahora.strftime('%Y-%m-%d %H:%M') }}</span>
+    <button class="informeToolbar__print" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <a class="informeToolbar__word" href="{{ url_for('sod.informe_word') }}">Descargar Word</a>
+    <a class="informeToolbar__close" href="{{ url_for('sod.index') }}">Cerrar</a>
+  </div>
+
+  <div class="informePage informeCover">
+    <div class="informeCover__logo">GRUPO SIMPA S.A.</div>
+    <div class="informeCover__sub">Departamento GRC · SAP S/4HANA Private Cloud 2022</div>
+    <div class="informeCover__title">Informe de Auditoría</div>
+    <div class="informeCover__title2">Segregación de Funciones (SOD)<br>&amp; Análisis de Licencias FUE</div>
+    <div class="informeCover__meta">
+      <table>
+        <tbody>
+          <tr><td>Fecha de emisión</td><td>{{ ahora.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+          <tr><td>Clasificación</td><td><strong>CONFIDENCIAL</strong> — Uso restringido</td></tr>
+          <tr><td>Destinatario</td><td>Dirección General · Auditoría Interna</td></tr>
+          <tr><td>Sistema</td><td>SAP S/4HANA Private Cloud 2022</td></tr>
+          <tr><td>Generado por</td><td>{{ current_user.username }}</td></tr>
+          <tr><td>Marco SOD</td><td>{{ data.total_rules_count }} reglas configuradas</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="informeCover__footer">Este documento es confidencial. Prohibida su distribución fuera de los destinatarios autorizados.</div>
+  </div>
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.resumen }}</span><span>Resumen Ejecutivo</span></div>
+
+    <div class="informeKgrid">
+      <div class="informeKbox informeKbox--primary">
+        <div class="informeKbox__value">{{ data.total_usuarios_activos }}</div>
+        <div class="informeKbox__label">Usuarios Activos</div>
+        <div class="informeKbox__sub">{{ data.total_roles_en_uso }} roles en uso</div>
+      </div>
+      <div class="informeKbox informeKbox--critical">
+        <div class="informeKbox__value">{{ data.summary.critical }}</div>
+        <div class="informeKbox__label">Conflictos Críticos</div>
+        <div class="informeKbox__sub">Acción inmediata</div>
+      </div>
+      <div class="informeKbox informeKbox--high">
+        <div class="informeKbox__value">{{ data.summary.high }}</div>
+        <div class="informeKbox__label">Conflictos Altos</div>
+        <div class="informeKbox__sub">Remediar en 30 días</div>
+      </div>
+      <div class="informeKbox informeKbox--medium">
+        <div class="informeKbox__value">{{ data.summary.medium }}</div>
+        <div class="informeKbox__label">Conflictos Medios</div>
+        <div class="informeKbox__sub">Remediar en 60 días</div>
+      </div>
+    </div>
+
+    <div class="informeKgrid informeKgrid--spaced">
+      <div class="informeKbox informeKbox--adv">
+        <div class="informeKbox__value">{{ data.fue_stats.ADV }}</div>
+        <div class="informeKbox__label">GB Advanced</div>
+        <div class="informeKbox__sub">1.0 FUE/usuario</div>
+      </div>
+      <div class="informeKbox informeKbox--core">
+        <div class="informeKbox__value">{{ data.fue_stats.CORE }}</div>
+        <div class="informeKbox__label">GC Core</div>
+        <div class="informeKbox__sub">0.2 FUE/usuario</div>
+      </div>
+      <div class="informeKbox informeKbox--self">
+        <div class="informeKbox__value">{{ data.fue_stats.SELF }}</div>
+        <div class="informeKbox__label">GD Self-Service</div>
+        <div class="informeKbox__sub">~0.033 FUE/usuario</div>
+      </div>
+      <div class="informeKbox informeKbox--primary">
+        <div class="informeKbox__value">{{ "%.2f"|format(data.fue_stats.total_fue) }}</div>
+        <div class="informeKbox__label">Total FUEs</div>
+        <div class="informeKbox__sub">Consumo estimado</div>
+      </div>
+    </div>
+
+    <div class="informeAlert informeAlert--spaced {{ 'informeAlert--crit' if data.summary.critical > 0 else ('informeAlert--high' if data.summary.high > 0 else 'informeAlert--ok') }}">
+      <strong>Conclusión ejecutiva:</strong>
+      {% if data.summary.critical > 0 %}
+        Se detectaron <strong>{{ data.summary.critical }} conflictos críticos</strong> con riesgo de fraude inmediato. Acción urgente requerida.
+      {% elif data.summary.high > 0 %}
+        No hay conflictos críticos. Existen <strong>{{ data.summary.high }} conflictos altos</strong> a remediar en 30 días.
+      {% else %}
+        Sin conflictos críticos ni altos. Los {{ data.summary.medium }} conflictos medios requieren controles compensatorios.
+      {% endif %}
+      {{ data.users_en_riesgo_total }} usuario(s) con al menos un conflicto SOD activo. {{ data.roles_criticos_count }} roles con nivel CRITICO.
+    </div>
+
+    <h3 class="informeSubhead">Distribución de conflictos por módulo</h3>
+    <table class="informeTable">
+      <thead><tr><th>Módulo</th><th>Crítico</th><th>Alto</th><th>Medio</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for m in data.modulo_breakdown %}
+        <tr>
+          <td class="informeTable__strong">{{ m.modulo }}</td>
+          <td class="{{ 'informeTable__crit' if m.critico else 'informeTable__muted' }}">{{ m.critico if m.critico else '—' }}</td>
+          <td class="{{ 'informeTable__high' if m.alto else 'informeTable__muted' }}">{{ m.alto if m.alto else '—' }}</td>
+          <td class="{{ 'informeTable__medium' if m.medio else 'informeTable__muted' }}">{{ m.medio if m.medio else '—' }}</td>
+          <td class="informeTable__strong">{{ m.total }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Sin conflictos activos por módulo.</td></tr>
+        {% endfor %}
+        <tr class="informeTable__total">
+          <td>TOTAL</td>
+          <td class="informeTable__crit">{{ data.summary.critical }}</td>
+          <td class="informeTable__high">{{ data.summary.high }}</td>
+          <td class="informeTable__medium">{{ data.summary.medium }}</td>
+          <td>{{ data.summary.critical + data.summary.high + data.summary.medium }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% if has_alertas %}
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.alertas }}</span><span>Alertas Críticas — Acción Inmediata</span></div>
+    <div class="informeAlert informeAlert--crit">Estos conflictos representan violaciones directas al principio SOD con alto potencial de fraude. Deben remediarse antes del próximo ciclo de auditoría.</div>
+    {% for item in data.criticos_activos %}
+    {% set roles = data.roles_by_rule_id.get(item.rule.id, []) %}
+    <div class="informeConflictCard informeConflictCard--crit">
+      <div class="informeConflictCard__header">
+        <span class="informeConflictCard__id">{{ item.rule.id }}</span>
+        <span class="informeConflictCard__desc">{{ item.rule.descripcion }}</span>
+        <span class="informeLevelBadge informeLevelBadge--critico">CRITICO</span>
+      </div>
+      <table class="informeInnerTable">
+        <tbody>
+          <tr><td class="informeInnerTable__label">{{ item.rule.permiso1 }}</td><td class="informeInnerTable__mono">{{ item.rule.tcodes1_list()|join(', ') }}</td></tr>
+          <tr><td class="informeInnerTable__label">{{ item.rule.permiso2 }}</td><td class="informeInnerTable__mono">{{ item.rule.tcodes2_list()|join(', ') }}</td></tr>
+          <tr>
+            <td class="informeInnerTable__label">Roles</td>
+            <td>
+              {% for rol in roles[:12] %}<span class="informeChip">{{ rol }}</span>{% endfor %}
+              {% if roles|length > 12 %} +{{ roles|length - 12 }} más{% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="informeInnerTable__label">Usuarios</td>
+            <td>
+              <strong class="informeInnerTable__count">{{ item.conflicted_users|length }}</strong>
+              {% if item.excepted_users %}
+                <span class="informeInnerTable__excepted">({{ item.excepted_users|length }} exceptuado{{ 's' if item.excepted_users|length > 1 else '' }} por Auditoría)</span>
+              {% endif %}
+              :
+              {% for u in item.conflicted_users[:10] %}<span class="informeChip informeChip--user">{{ u }}</span>{% endfor %}
+              {% if item.conflicted_users|length > 10 %} +{{ item.conflicted_users|length - 10 }} más{% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader">
+      <span class="informeSecHeader__n">{{ sec.sod }}</span>
+      <span>
+        Detalle de Conflictos SOD ({{ data.rules_active_count }} activos{% if data.rules_fully_excepted_count %} · {{ data.rules_fully_excepted_count }} exceptuados por Auditoría{% endif %})
+      </span>
+    </div>
+    {% for nivel, items in [('ALTO', data.altos_activos), ('MEDIO', data.medios_activos)] %}
+      {% if items %}
+      <h3 class="informeSubhead informeSubhead--{{ nivel|lower }}">{{ nivel }} ({{ items|length }})</h3>
+      <table class="informeTable">
+        <thead><tr><th>ID</th><th>Descripción</th><th>TCodes A</th><th>TCodes B</th><th>Roles</th><th>Usuarios</th></tr></thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td class="informeTable__mono informeTable__strong">{{ item.rule.id }}</td>
+            <td>{{ item.rule.descripcion }}</td>
+            <td class="informeTable__mono">{{ item.rule.tcodes1_list()|join(', ') }}</td>
+            <td class="informeTable__mono">{{ item.rule.tcodes2_list()|join(', ') }}</td>
+            <td class="informeTable__center informeTable__mono">{{ data.roles_by_rule_id.get(item.rule.id, [])|length }}</td>
+            <td class="informeTable__center informeTable__mono informeTable__crit">{{ item.conflicted_users|length }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    {% endfor %}
+    {% if not data.altos_activos and not data.medios_activos %}
+    <p class="informeNote">Sin conflictos de nivel Alto o Medio activos.</p>
+    {% endif %}
+  </div>
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.usuarios }}</span><span>Usuarios en Riesgo ({{ data.users_en_riesgo|length }})</span></div>
+    <table class="informeTable">
+      <thead>
+        <tr>
+          <th>#</th><th>Usuario</th>
+          {% if data.fue_source_oficial %}<th>Nombre</th>{% endif %}
+          <th>Nivel SOD</th><th>FUE DB</th><th>FUE Roles</th>
+          {% if data.fue_source_oficial %}<th>Último acceso</th>{% endif %}
+          <th>Conflictos</th><th>IDs</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in data.users_en_riesgo %}
+        <tr>
+          <td class="informeTable__mono informeTable__center">{{ loop.index }}</td>
+          <td class="informeTable__strong informeTable__mono">{{ u.user }}</td>
+          {% if data.fue_source_oficial %}<td>{{ u.nombre or '—' }}</td>{% endif %}
+          <td><span class="informeLevelBadge informeLevelBadge--{{ u.mx|lower }}">{{ u.mx }}</span></td>
+          <td class="informeTable__fueDb">{{ u.fue_from_db_label or '—' }}</td>
+          <td><span class="informeFueBadge informeFueBadge--{{ u.fue_type|lower }}">{{ u.fue_label }}</span></td>
+          {% if data.fue_source_oficial %}
+          <td class="informeTable__mono {{ 'informeTable__crit' if u.days and u.days > 90 else ('informeTable__high' if u.days and u.days > 30 else '') }}">
+            {{ u.last_access.strftime('%Y-%m-%d') if u.last_access else '—' }}
+          </td>
+          {% endif %}
+          <td class="informeTable__center informeTable__mono informeTable__crit">{{ u.cc }}</td>
+          <td>
+            {% for cid in u.conflicts[:8] %}<span class="informeChip">{{ cid }}</span>{% endfor %}
+            {% if u.conflicts|length > 8 %} +{{ u.conflicts|length - 8 }}{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9">Sin usuarios con conflictos activos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.roles }}</span><span>Roles Críticos ({{ data.roles_criticos_total }})</span></div>
+    <table class="informeTable">
+      <thead><tr><th>#</th><th>Rol</th><th>Nivel</th><th>FUE</th><th>Usuarios</th><th>Conflictos</th><th>Descripción</th></tr></thead>
+      <tbody>
+        {% for r in data.roles_criticos %}
+        <tr>
+          <td class="informeTable__mono informeTable__center">{{ loop.index }}</td>
+          <td class="informeTable__strong informeTable__mono">{{ r.rol }}</td>
+          <td><span class="informeLevelBadge informeLevelBadge--{{ r.mx|lower }}">{{ r.mx }}</span></td>
+          <td><span class="informeFueBadge informeFueBadge--{{ (r.fue_code or 'none')|lower }}">{{ r.fue_label or 'Sin FUE' }}</span></td>
+          <td class="informeTable__mono informeTable__center">{{ r.uc }}</td>
+          <td>{% for rid in r.ids[:6] %}<span class="informeChip">{{ rid }}</span>{% endfor %}</td>
+          <td>{{ r.desc[:50] if r.desc else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">Sin roles críticos detectados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.fue }}</span><span>Análisis de Licencias FUE</span></div>
+    <div class="informeAlert informeAlert--info">
+      <strong>Fuente:</strong>
+      {% if data.fue_source_oficial %}
+        FUE por usuario tomado de <strong>FUE_Users (SAP oficial)</strong>. GB Advanced = 1.0 FUE · GC Core = 0.2 FUE · GD Self-Service ≈ 0.033 FUE.
+      {% else %}
+        FUE derivado de roles asignados (FUE_Users no disponible). GB Advanced = 1.0 FUE · GC Core = 0.2 FUE · GD Self-Service ≈ 0.033 FUE.
+      {% endif %}
+    </div>
+    <div class="informeKgrid">
+      <div class="informeKbox informeKbox--adv">
+        <div class="informeKbox__value">{{ data.fue_stats.ADV }}</div>
+        <div class="informeKbox__label">GB Advanced</div>
+        <div class="informeKbox__sub">{{ "%.2f"|format(data.fue_stats.ADV * 1.0) }} FUE</div>
+      </div>
+      <div class="informeKbox informeKbox--core">
+        <div class="informeKbox__value">{{ data.fue_stats.CORE }}</div>
+        <div class="informeKbox__label">GC Core</div>
+        <div class="informeKbox__sub">{{ "%.2f"|format(data.fue_stats.CORE * 0.2) }} FUE</div>
+      </div>
+      <div class="informeKbox informeKbox--self">
+        <div class="informeKbox__value">{{ data.fue_stats.SELF }}</div>
+        <div class="informeKbox__label">GD Self-Service</div>
+        <div class="informeKbox__sub">{{ "%.2f"|format(data.fue_stats.SELF * 0.0333) }} FUE</div>
+      </div>
+      <div class="informeKbox informeKbox--primary">
+        <div class="informeKbox__value">{{ "%.2f"|format(data.fue_stats.total_fue) }}</div>
+        <div class="informeKbox__label">Total FUE</div>
+        <div class="informeKbox__sub">{{ 'Según SAP oficial' if data.fue_source_oficial else 'Estimado por roles' }}</div>
+      </div>
+    </div>
+    {% if data.fue_source_oficial %}
+    <table class="informeTable informeTable--spaced">
+      <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>FUE SAP (oficial)</th><th>Peso FUE</th><th>Último acceso</th></tr></thead>
+      <tbody>
+        {% for row in data.fue_top_rows %}
+        <tr>
+          <td class="informeTable__mono informeTable__center">{{ loop.index }}</td>
+          <td class="informeTable__strong informeTable__mono">{{ row.user }}</td>
+          <td>{{ row.nombre or '—' }}</td>
+          <td><span class="informeFueBadge informeFueBadge--{{ row.fue_code|lower }}">{{ row.fue_label }}</span></td>
+          <td class="informeTable__mono informeTable__center informeTable__strong">{{ "%.3f"|format(row.fue_weight) }}</td>
+          <td class="informeTable__mono informeTable__center">{{ row.last_access.strftime('%Y-%m-%d') if row.last_access else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">Sin usuarios con FUE oficial asignado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <table class="informeTable informeTable--spaced">
+      <thead><tr><th>#</th><th>Usuario</th><th>Tipo FUE</th><th>Peso FUE</th><th>Roles clasificados</th></tr></thead>
+      <tbody>
+        {% for row in data.fue_top_rows %}
+        <tr>
+          <td class="informeTable__mono informeTable__center">{{ loop.index }}</td>
+          <td class="informeTable__strong informeTable__mono">{{ row.user }}</td>
+          <td><span class="informeFueBadge informeFueBadge--{{ row.fue_code|lower }}">{{ row.fue_label }}</span></td>
+          <td class="informeTable__mono informeTable__center informeTable__strong">{{ "%.3f"|format(row.fue_weight) }}</td>
+          <td>
+            {% for fr in row.fue_roles[:4] %}<span class="informeChip">{{ fr.rol }}</span>{% endfor %}
+            {% if row.fue_roles|length > 4 %} +{{ row.fue_roles|length - 4 }}{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">Sin usuarios con FUE derivado de roles.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.matriz }}</span><span>Matriz SOD — {{ data.total_rules_count }} Reglas Definidas</span></div>
+    <p class="informeNote">Reglas del framework aplicadas. Se resaltan las que tienen conflictos detectados en el ambiente.</p>
+    <table class="informeTable">
+      <thead><tr><th>ID</th><th>Módulo</th><th>Nivel</th><th>Descripción</th><th>TCodes A</th><th>TCodes B</th><th>Usuarios</th></tr></thead>
+      <tbody>
+        {% for rule in data.todas_las_reglas %}
+        {% set hit = data.hits_by_rule.get(rule.id, 0) %}
+        <tr class="{{ 'informeTable__hit' if hit else '' }}">
+          <td class="informeTable__mono {{ 'informeTable__strong informeTable__high' if hit else '' }}">{{ rule.id }}</td>
+          <td class="informeTable__mono">{{ rule.modulo }}</td>
+          <td><span class="informeLevelBadge informeLevelBadge--{{ rule.nivel|lower }}">{{ rule.nivel }}</span></td>
+          <td class="{{ 'informeTable__strong' if hit else '' }}">{{ rule.descripcion }}</td>
+          <td class="informeTable__mono">{{ rule.tcodes1_list()|join(', ') }}</td>
+          <td class="informeTable__mono">{{ rule.tcodes2_list()|join(', ') }}</td>
+          <td class="informeTable__mono informeTable__center {{ 'informeTable__strong informeTable__crit' if hit else '' }}">{{ hit if hit else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="informePage">
+    <div class="informePageHeader">CONFIDENCIAL · Grupo Simpa S.A. · Informe GRC-SOD · {{ ahora.strftime('%Y-%m-%d') }}</div>
+    <div class="informeSecHeader"><span class="informeSecHeader__n">{{ sec.recos }}</span><span>Plan de Remediación Recomendado</span></div>
+    {% if data.summary.critical > 0 %}
+    <div class="informeAlert informeAlert--crit"><strong>Inmediato (0-15 días):</strong> Revocar los {{ data.summary.critical }} conflictos críticos. Prioridad: HR (nómina), FI (pagos+aprobación), MM (compras sin segregación). Documentar con firma de Gerencia y Auditoría.</div>
+    {% endif %}
+    {% if data.summary.high > 0 %}
+    <div class="informeAlert informeAlert--high">
+      <strong>Corto plazo (30 días):</strong> Remediar {{ data.summary.high }} conflictos altos mediante segregación de roles o controles compensatorios documentados.</div>
+    {% endif %}
+    {% if data.summary.medium > 0 %}
+    <div class="informeAlert informeAlert--medium">
+      <strong>Mediano plazo (60 días):</strong> Revisar los {{ data.summary.medium }} conflictos medios e implementar controles compensatorios con evidencia en el GRC.</div>
+    {% endif %}
+    {% if data.summary.critical == 0 and data.summary.high == 0 and data.summary.medium == 0 %}
+    <div class="informeAlert informeAlert--ok"><strong>Sin conflictos pendientes.</strong> Mantener el re-análisis periódico y el control de excepciones documentadas.</div>
+    {% endif %}
+    <table class="informeTable informeTable--spaced">
+      <thead><tr><th>Acción</th><th>Responsable</th><th>Plazo</th><th>Referencia</th></tr></thead>
+      <tbody>
+        <tr><td>Revocar roles en conflicto crítico</td><td>Responsable SAP + Gerencia</td><td>0-15 días</td><td>Sección {{ sec.alertas or sec.sod }} de este informe</td></tr>
+        <tr><td>Revisar usuarios FUE Advanced sin justificación</td><td>Responsable SAP + Licencias</td><td>15 días</td><td>Sección {{ sec.fue }} — FUE</td></tr>
+        <tr><td>Activar logs SM20/SM21 para roles críticos</td><td>Basis / BC</td><td>Inmediato</td><td>Conflictos BC-*</td></tr>
+        <tr><td>Documentar excepciones SOD aprobadas</td><td>Auditoría Interna</td><td>30 días</td><td>Política GRC</td></tr>
+        <tr><td>Re-análisis trimestral obligatorio</td><td>Responsable SAP</td><td>Trimestral</td><td>Proceso GRC continuo</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

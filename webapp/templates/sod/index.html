@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Módulo SOD / GRC{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Análisis de segregación de funciones sobre los roles y usuarios importados desde SAP.</p>
+
+{% set nivel_css = {"CRITICO": "critical", "ALTO": "high", "MEDIO": "medium"} %}
+{% macro bar_chart(items, value_key, max_value, label_key="modulo", modifier_key=None) %}
+<div class="sodBarChart">
+  {% for item in items %}
+  {% set value = item[value_key] %}
+  {% set label = item[label_key] %}
+  {% set pct = (value / max_value * 200) if max_value > 0 else 0 %}
+  {% set modifier = nivel_css.get(item[modifier_key]) if modifier_key else None %}
+  <div class="sodBarChart__row">
+    <span class="sodBarChart__label" title="{{ label }}">{{ label }}</span>
+    <svg class="sodBarChart__svg" viewBox="0 0 200 18" preserveAspectRatio="none" role="img" aria-label="{{ label }}: {{ value }}">
+      <rect class="sodBarChart__track" x="0" y="2" width="200" height="14" rx="3" />
+      <rect class="sodBarChart__fill {{ 'sodBarChart__fill--' + modifier if modifier else '' }}" x="0" y="2" width="{{ '%.2f'|format(pct) }}" height="14" rx="3" />
+    </svg>
+    <span class="sodBarChart__value">{{ value }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+<div class="sodSummary">
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--neutral">{{ summary.total_rules }}</span>
+    <span class="sodSummary__label">Reglas activas en la matriz</span>
+  </div>
+  {% if summary.has_data %}
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--critical">{{ summary.critical }}</span>
+    <span class="sodSummary__label">Críticos</span>
+  </div>
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--high">{{ summary.high }}</span>
+    <span class="sodSummary__label">Altos</span>
+  </div>
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--medium">{{ summary.medium }}</span>
+    <span class="sodSummary__label">Medios</span>
+  </div>
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--neutral">{{ summary.active_users }}</span>
+    <span class="sodSummary__label">Usuarios con conflicto</span>
+  </div>
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--neutral">{{ summary.exceptions }}</span>
+    <span class="sodSummary__label">Excepciones activas</span>
+  </div>
+  {% if summary.at_risk_inactive > 0 %}
+  <div class="sodSummary__card">
+    <span class="sodSummary__value sodSummary__value--critical">{{ summary.at_risk_inactive }}</span>
+    <span class="sodSummary__label">Inactivos con riesgo</span>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+{% if summary.has_data %}
+<div class="sodChartGrid">
+  <div class="sodChartCard">
+    <h2 class="sodChartCard__title">Distribución de conflictos por severidad</h2>
+    {% set total_conflicts = summary.critical + summary.high + summary.medium %}
+    {% if total_conflicts > 0 %}
+      {% set circ = 314.16 %}
+      {% set crit_dash = (summary.critical / total_conflicts * circ) %}
+      {% set high_dash = (summary.high / total_conflicts * circ) %}
+      {% set med_dash = (summary.medium / total_conflicts * circ) %}
+      {% set off_high = crit_dash %}
+      {% set off_medium = crit_dash + high_dash %}
+      <div class="sodChart">
+        <svg class="sodChart__svg" viewBox="0 0 120 120" width="160" height="160" role="img" aria-label="Distribución de conflictos por severidad">
+          <g class="sodChart__rotate">
+            <circle class="sodChart__track" cx="60" cy="60" r="50" />
+            <circle class="sodChart__seg sodChart__seg--critical" cx="60" cy="60" r="50"
+              stroke-dasharray="{{ '%.2f'|format(crit_dash) }} {{ '%.2f'|format(circ - crit_dash) }}"
+              stroke-dashoffset="0" />
+            <circle class="sodChart__seg sodChart__seg--high" cx="60" cy="60" r="50"
+              stroke-dasharray="{{ '%.2f'|format(high_dash) }} {{ '%.2f'|format(circ - high_dash) }}"
+              stroke-dashoffset="-{{ '%.2f'|format(off_high) }}" />
+            <circle class="sodChart__seg sodChart__seg--medium" cx="60" cy="60" r="50"
+              stroke-dasharray="{{ '%.2f'|format(med_dash) }} {{ '%.2f'|format(circ - med_dash) }}"
+              stroke-dashoffset="-{{ '%.2f'|format(off_medium) }}" />
+          </g>
+          <text class="sodChart__centerValue" x="60" y="58" text-anchor="middle">{{ total_conflicts }}</text>
+          <text class="sodChart__centerLabel" x="60" y="74" text-anchor="middle">conflictos</text>
+        </svg>
+        <ul class="sodChart__legend">
+          <li class="sodChart__legendItem">
+            <span class="sodChart__legendDot sodChart__legendDot--critical"></span>
+            Críticos <strong>{{ summary.critical }}</strong>
+          </li>
+          <li class="sodChart__legendItem">
+            <span class="sodChart__legendDot sodChart__legendDot--high"></span>
+            Altos <strong>{{ summary.high }}</strong>
+          </li>
+          <li class="sodChart__legendItem">
+            <span class="sodChart__legendDot sodChart__legendDot--medium"></span>
+            Medios <strong>{{ summary.medium }}</strong>
+          </li>
+          <li class="sodChart__legendItem">
+            <span class="sodChart__legendDot sodChart__legendDot--neutral"></span>
+            Excepciones activas <strong>{{ summary.exceptions }}</strong>
+          </li>
+        </ul>
+      </div>
+    {% else %}
+      <p class="sodRuleGroup__empty">No hay conflictos detectados sobre los datos importados.</p>
+    {% endif %}
+  </div>
+
+  <div class="sodChartCard">
+    <h2 class="sodChartCard__title">Conflictos activos por módulo SAP</h2>
+    {% if summary.modulo_breakdown %}
+      {{ bar_chart(summary.modulo_breakdown, "count", summary.modulo_breakdown[0].count) }}
+    {% else %}
+      <p class="sodRuleGroup__empty">No hay conflictos detectados sobre los datos importados.</p>
+    {% endif %}
+  </div>
+
+  <div class="sodChartCard">
+    <h2 class="sodChartCard__title">Top 5 reglas con más usuarios en conflicto</h2>
+    {% if summary.top_rules %}
+      {{ bar_chart(summary.top_rules, "active_count", summary.top_rules[0].active_count, label_key="descripcion", modifier_key="nivel") }}
+    {% else %}
+      <p class="sodRuleGroup__empty">No hay conflictos detectados sobre los datos importados.</p>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p class="sodRuleGroup__empty">
+  Todavía no se importaron datos de roles SAP (AGR_USERS / AGR_1251). Carga los archivos
+  desde "Importar datos SAP" para habilitar el análisis.
+</p>
+
+{% if summary.rules_by_module %}
+<div class="sodChartCard">
+  <h2 class="sodChartCard__title">Reglas activas por módulo SAP</h2>
+  {{ bar_chart(summary.rules_by_module, "count", summary.rules_by_module[0].count) }}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

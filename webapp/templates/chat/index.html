@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Asistente SAP · {{ app_name }}{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/chat.module.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="pageHeader">
+  <div class="pageHeader__left">
+    <h1 class="pageHeader__title">Asistente SAP</h1>
+    <p class="pageHeader__sub">Consultá datos, simulá cambios de licencias y analizá riesgos SOD en lenguaje natural.</p>
+  </div>
+</div>
+
+<div class="chatPage">
+
+  <!-- Área de mensajes -->
+  <div class="chatMessages" id="chatMessages">
+
+    <!-- Estado vacío inicial -->
+    <div class="chatEmpty" id="chatEmpty">
+      <div class="chatEmpty__icon">💬</div>
+      <div class="chatEmpty__title">¿En qué puedo ayudarte?</div>
+      <div class="chatEmpty__sub">Hacé una pregunta sobre usuarios, roles, transacciones, licencias FUE o conflictos SOD.</div>
+    </div>
+
+  </div>
+
+  <!-- Sugerencias de preguntas -->
+  <div class="chatSuggestions" id="chatSuggestions">
+    <button class="chatSuggestion" data-q="¿Qué usuarios tienen la transacción ME51N?">¿Quién tiene ME51N?</button>
+    <button class="chatSuggestion" data-q="Mostrame el resumen actual de licencias FUE">Resumen de licencias</button>
+    <button class="chatSuggestion" data-q="¿Cuántos conflictos SOD críticos hay en total?">Conflictos SOD críticos</button>
+    <button class="chatSuggestion" data-q="¿Qué conflictos tiene el usuario ADMIN?">Conflictos de un usuario</button>
+    <button class="chatSuggestion" data-q="Si bajo el FUE del rol Z_EJEMPLO a Self Service, ¿cuánto ahorro?">Simular cambio FUE</button>
+  </div>
+
+  <!-- Barra de entrada -->
+  <div class="chatInputBar">
+    <textarea
+      id="chatInput"
+      class="chatInput"
+      placeholder="Escribí tu pregunta… (Enter para enviar, Shift+Enter para nueva línea)"
+      rows="1"
+      autocomplete="off"
+    ></textarea>
+    <button id="chatClearBtn" class="chatClearBtn" title="Limpiar conversación">Limpiar</button>
+    <button id="chatSendBtn" class="chatSendBtn" title="Enviar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+{% endblock %}

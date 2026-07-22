@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Resultados del análisis SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+
+{% if current_user.has_permission('can_export_reports') %}
+<div class="sodActions">
+  <a class="sodActions__link" href="{{ url_for('sod.exportar_resultados') }}">Exportar CSV</a>
+  <a class="sodActions__link" href="{{ url_for('sod.informe') }}" target="_blank" rel="noopener">Exportar Informe</a>
+  <a class="sodActions__link" href="{{ url_for('sod.informe_word') }}">Exportar Word</a>
+</div>
+{% endif %}
+
+{% if results %}
+<div class="filterBar" data-filter-scope="results-list">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Buscar regla, usuario o TCode...">
+  <select class="filterBar__select" data-filter-field="modulo">
+    <option value="">Todos los módulos</option>
+    {% for modulo in modulos %}
+      <option value="{{ modulo }}">{{ modulo }}</option>
+    {% endfor %}
+  </select>
+  <select class="filterBar__select" data-filter-field="nivel">
+    <option value="">Todos los niveles</option>
+    <option value="CRITICO">Crítico</option>
+    <option value="ALTO">Alto</option>
+    <option value="MEDIO">Medio</option>
+  </select>
+  <span class="filterBar__count" id="results-list-count"></span>
+</div>
+{% endif %}
+
+<div id="results-list">
+{% for item in results %}
+  {% set rule = item.rule %}
+  {% set searchable = [rule.id, rule.modulo, rule.descripcion, rule.permiso1, rule.permiso2,
+                        rule.tcodes1_list()|join(' '), rule.tcodes2_list()|join(' '),
+                        item.conflicted_users|join(' ')] %}
+  <div class="sodRuleGroup" data-filter-item
+       data-f-q="{{ searchable|join(' ')|lower }}"
+       data-f-modulo="{{ rule.modulo }}"
+       data-f-nivel="{{ rule.nivel }}">
+    <div class="sodRuleGroup__header">
+      <strong>{{ rule.id }} - {{ rule.modulo }}</strong>
+      <span class="sodLevelBadge sodLevelBadge--{{ rule.nivel|lower }}">{{ rule.nivel }}</span>
+    </div>
+    <p class="sodRuleGroup__desc">{{ rule.descripcion }}</p>
+    <p class="sodRuleGroup__desc">{{ rule.permiso1 }} ({{ rule.tcodes1_list()|join(', ') }})
+       &harr; {{ rule.permiso2 }} ({{ rule.tcodes2_list()|join(', ') }})</p>
+
+    {% if item.conflicted_users %}
+      <div class="sodRuleGroup__users">
+        {% for username in item.conflicted_users %}
+          <span class="sodRuleGroup__userChip">{{ username }}</span>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="sodRuleGroup__empty">Sin conflictos activos para esta regla.</p>
+    {% endif %}
+
+    {% if item.excepted_users %}
+      <p class="sodRuleGroup__desc">Exceptuados: {{ item.excepted_users|join(', ') }}</p>
+    {% endif %}
+  </div>
+{% else %}
+  <p class="sodRuleGroup__empty">No hay reglas activas configuradas.</p>
+{% endfor %}
+</div>
+{% if results %}
+<p class="filterBar__empty isHidden" id="results-list-empty">Sin reglas para el filtro seleccionado.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

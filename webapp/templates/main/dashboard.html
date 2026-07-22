@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Panel principal{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/dashboard.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="pageHeader">
+  <div>
+    <h1 class="pageHeader__title">Bienvenido, {{ current_user.full_name or current_user.username }}</h1>
+    <p class="pageHeader__subtitle">Rol actual: <strong>{{ current_user.role.name }}</strong></p>
+  </div>
+</div>
+
+<div class="dashboard__grid">
+  {% for card in cards %}
+    <a class="dashboardCard" href="{{ url_for(card.url) }}">
+      <span class="dashboardCard__icon dashboardCard__icon--{{ card.stat_type }}">
+        {{ icons.icon('shield' if card.stat_type == 'sod' else 'ticket', 20) }}
+      </span>
+      <h2 class="dashboardCard__title">{{ card.title }}</h2>
+      <p class="dashboardCard__description">{{ card.description }}</p>
+
+      {% if card.stat_type == "sod" %}
+        {% if card.stats.has_data %}
+          <div class="dashboardCard__stats">
+            <span class="dashboardCard__stat dashboardCard__stat--critical">{{ card.stats.critical }} críticos</span>
+            <span class="dashboardCard__stat dashboardCard__stat--high">{{ card.stats.high }} altos</span>
+            <span class="dashboardCard__stat dashboardCard__stat--medium">{{ card.stats.medium }} medios</span>
+            <span class="dashboardCard__stat dashboardCard__stat--neutral">{{ card.stats.active_users }} usuarios activos</span>
+            {% if card.stats.at_risk_inactive > 0 %}
+              <span class="dashboardCard__stat dashboardCard__stat--critical">{{ card.stats.at_risk_inactive }} inactivos con riesgo</span>
+            {% endif %}
+          </div>
+        {% else %}
+          <p class="dashboardCard__noData">Sin datos importados todavía</p>
+        {% endif %}
+      {% elif card.stat_type == "licenses" %}
+        {% if card.stats.has_data %}
+          <div class="dashboardCard__stats">
+            <span class="dashboardCard__stat dashboardCard__stat--neutral">{{ card.stats.advanced }} Advanced</span>
+            <span class="dashboardCard__stat dashboardCard__stat--neutral">{{ card.stats.core }} Core</span>
+            <span class="dashboardCard__stat dashboardCard__stat--neutral">{{ card.stats.self_service }} Self-Service</span>
+            {% if card.stats.unassigned > 0 %}
+              <span class="dashboardCard__stat dashboardCard__stat--medium">{{ card.stats.unassigned }} sin tipo</span>
+            {% endif %}
+            <span class="dashboardCard__stat dashboardCard__stat--total">{{ card.stats.total_fue }} FUE total</span>
+          </div>
+        {% else %}
+          <p class="dashboardCard__noData">Sin datos importados todavía</p>
+        {% endif %}
+      {% endif %}
+    </a>
+  {% else %}
+    <p>Tu rol no tiene módulos asignados todavía. Contacta al administrador.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Validar nuevo rol{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-form.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/tcode-picker.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/validar.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Simula el efecto de asignarle roles nuevos a un usuario antes de ejecutar el cambio en SAP: detecta conflictos SOD nuevos y el impacto en el tipo de licencia FUE resultante.</p>
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD/GRC</a></p>
+
+<form class="adminForm" method="POST">
+  <label class="adminForm__label" for="username">Usuario SAP</label>
+  <input class="adminForm__input" type="text" id="username" name="username" list="usuarios-conocidos"
+         value="{{ username_in }}" placeholder="Ej. JPEREZ" required autocomplete="off">
+  <datalist id="usuarios-conocidos">
+    {% for u in usuarios_conocidos %}<option value="{{ u }}">{% endfor %}
+  </datalist>
+
+  <label class="adminForm__label" for="rol-search">Roles nuevos a simular</label>
+  <div class="tcPicker" data-tc-picker data-tc-source="{{ url_for('sod.validar_roles_json') }}"
+       data-tc-initial="{{ roles_in }}">
+    <div class="tcPicker__tags" data-tc-tags></div>
+    <div class="tcPicker__searchWrap">
+      <input class="tcPicker__search" id="rol-search" type="text" data-tc-search
+             autocomplete="off" placeholder="Buscar o escribir rol...">
+      <div class="tcPicker__drop isHidden" data-tc-drop></div>
+    </div>
+    <input type="hidden" name="roles" data-tc-hidden>
+  </div>
+
+  <div class="adminForm__actions">
+    <button class="adminForm__submit" type="submit">Simular</button>
+  </div>
+</form>
+
+{% if resultado %}
+<div class="valResult">
+  <div class="valResult__decision valResult__decision--{{ resultado.decision|lower }}">
+    {% if resultado.decision == 'RECHAZAR' %}&#10060; RECHAZAR
+    {% elif resultado.decision == 'EXCEPCION_DOCUMENTADA' %}&#9888; EXCEPCIÓN DOCUMENTADA
+    {% elif resultado.decision == 'REVISAR_FUE' %}&#128176; REVISAR FUE
+    {% else %}&#9989; APROBAR
+    {% endif %}
+  </div>
+
+  <div class="valResult__grid">
+    <div class="valResult__block">
+      <h3 class="valResult__blockTitle">Usuario</h3>
+      <p><strong>{{ resultado.username }}</strong></p>
+      <p class="valResult__sub">Roles actuales activos: {{ resultado.current_roles|length }}</p>
+      {% for r in resultado.current_roles %}<span class="valResult__pill">{{ r }}</span>{% endfor %}
+    </div>
+
+    <div class="valResult__block">
+      <h3 class="valResult__blockTitle">Roles nuevos simulados</h3>
+      {% for r in resultado.new_roles_info %}
+      <p class="valResult__newRole{{ '' if r.known else ' valResult__newRole--unknown' }}">
+        <span class="valResult__pill valResult__pill--new">{{ r.rol }}</span>
+        {{ r.desc }}
+        {% if r.fue_code != 'NONE' %}
+          <span class="licTypeBadge licTypeBadge--{{ r.fue_code|lower }}">{{ r.fue_label }}</span>
+        {% endif %}
+        {% if not r.known %}<span class="valResult__unknownFlag">Rol sin tcodes ni asignaciones cargadas</span>{% endif %}
+      </p>
+      {% endfor %}
+    </div>
+
+    <div class="valResult__block">
+      <h3 class="valResult__blockTitle">Impacto FUE</h3>
+      <p>Actual: <span class="licTypeBadge licTypeBadge--{{ resultado.current_fue_code|lower }}">{{ resultado.current_fue_label }}</span></p>
+      <p>Resultante: <span class="licTypeBadge licTypeBadge--{{ resultado.result_fue_code|lower }}">{{ resultado.result_fue_label }}</span></p>
+      {% if resultado.upgrade %}<p class="valResult__upgradeWarn">&#9650; Implica upgrade de tipo FUE</p>{% endif %}
+    </div>
+  </div>
+
+  <h3 class="valResult__blockTitle">Conflictos SOD nuevos ({{ resultado.new_conflicts|length }})</h3>
+  {% if resultado.new_conflicts %}
+  <table>
+    <thead>
+      <tr><th>Regla</th><th>Nivel</th><th>Descripción</th><th>Aportado por</th></tr>
+    </thead>
+    <tbody>
+      {% for item in resultado.new_conflicts %}
+      <tr>
+        <td>{{ item.rule.id }}</td>
+        <td><span class="sodLevelBadge sodLevelBadge--{{ item.rule.nivel|lower }}">{{ item.rule.nivel }}</span></td>
+        <td>{{ item.rule.descripcion }}</td>
+        <td>
+          {% for c in item.from_new_roles %}
+            <span class="valResult__pill">{{ c.rol }}: {{ c.tcodes|join(', ') }}</span>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="valResult__empty">Ningún conflicto SOD nuevo detectado con los roles simulados.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tcode-picker.js') }}"></script>
+{% endblock %}

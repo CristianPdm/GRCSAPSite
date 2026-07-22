@@ -1,0 +1,39 @@
+{# Fragmento reutilizable de la Matriz Usuario x Rol x TCode: el conteo y
+   la tabla (o el estado vacío). Lo usa tanto la carga completa de la
+   página (sod/matriz.html) como la respuesta AJAX de búsqueda incremental
+   (GET /sod/matriz con header X-Requested-With), para no duplicar el
+   marcado entre ambos casos. #}
+<div id="mx-results">
+  <p class="mxResultsCount" id="mx-count">
+    {{ total|default(0) }} fila{{ 's' if total != 1 else '' }}{{ ' (mostrando las primeras 2000)' if total > 2000 else '' }}
+  </p>
+  <div class="mxTable" id="mx-table-wrap">
+  {% if rows %}
+  <table>
+    <thead>
+      <tr>
+        {% if excl != 'usuario' %}<th>Usuario</th>{% endif %}
+        {% if excl != 'rol' %}<th>Rol</th>{% endif %}
+        {% if excl != 'tcode' %}<th>TCode</th><th>Descripción</th>{% endif %}
+        {% if excl %}<th>{{ {'usuario': 'Usuarios', 'rol': 'Roles', 'tcode': 'TCodes'}[excl] }} distintos</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        {% if excl != 'usuario' %}<td class="mxTable__user">{{ row.user }}</td>{% endif %}
+        {% if excl != 'rol' %}<td class="mxTable__rol">{{ row.rol }}</td>{% endif %}
+        {% if excl != 'tcode' %}
+        <td><span class="mxTable__tc">{{ row.tc }}</span></td>
+        <td class="mxTable__desc">{{ row.desc or '—' }}</td>
+        {% endif %}
+        {% if excl %}<td class="mxTable__veces">{{ row.veces }}</td>{% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="mxEmpty">Sin filas para los filtros seleccionados. Importa AGR_USERS/AGR_1251 en SOD para habilitar esta matriz.</p>
+  {% endif %}
+  </div>
+</div>

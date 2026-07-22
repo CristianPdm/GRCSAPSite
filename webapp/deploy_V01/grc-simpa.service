@@ -1,0 +1,30 @@
+[Unit]
+# Servicio systemd: arranca el sitio automaticamente al iniciar el
+# servidor y lo reinicia solo si el proceso se cae.
+Description=Licencias & GRC - Grupo Simpa (Flask/Gunicorn)
+After=network.target
+
+[Service]
+# Usuario/grupo dedicados (sin privilegios), NO usar root.
+# Crearlos antes con: sudo useradd -r -s /usr/sbin/nologin grcsimpa
+User=grcsimpa
+Group=grcsimpa
+
+# Ajustar esta ruta si se instala en otro directorio.
+WorkingDirectory=/opt/grc-simpa
+EnvironmentFile=/opt/grc-simpa/.env
+
+# 3 workers es un punto de partida razonable para un sitio interno de
+# uso moderado; subir si hay muchos usuarios concurrentes.
+ExecStart=/opt/grc-simpa/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile /opt/grc-simpa/logs/access.log \
+    --error-logfile /opt/grc-simpa/logs/error.log \
+    run:app
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

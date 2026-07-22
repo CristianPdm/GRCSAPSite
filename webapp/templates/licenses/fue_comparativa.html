@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Análisis FUE comparativa{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/fue_comparativa.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Compara el tipo FUE oficial (lo que SAP factura) contra el tipo FUE que le correspondería a cada usuario según sus roles activos.</p>
+<p class="backLink"><a href="{{ url_for('licenses.index') }}">Volver al módulo de Licencias</a></p>
+
+{% if rows %}
+<div class="filterBar" data-filter-scope="fue-cmp-list">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Buscar usuario o nombre...">
+  <select class="filterBar__select" data-filter-field="diff">
+    <option value="">Todos los usuarios</option>
+    <option value="si">Solo diferencias</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="dif">
+    <option value="">Cualquier situación</option>
+    <option value="over">SAP mayor (sobredimensionado)</option>
+    <option value="under">SAP menor (riesgo sublicencia)</option>
+    <option value="noroles">Sin roles activos</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="sap">
+    <option value="">Cualquier FUE SAP</option>
+    <option value="ADV">GB Advanced Use</option>
+    <option value="CORE">GC Core Use</option>
+    <option value="SELF">GD Self-Service Use</option>
+    <option value="NONE">Sin tipo SAP</option>
+  </select>
+  <span class="filterBar__count" id="fue-cmp-list-count"></span>
+</div>
+{% endif %}
+
+<div class="fueCmpTable">
+{% if rows %}
+<table id="fue-cmp-list">
+  <thead>
+    <tr>
+      <th>Usuario</th>
+      <th>Nombre</th>
+      <th>FUE en SAP (oficial)</th>
+      <th>FUE por roles</th>
+      <th>Situación</th>
+      <th>Roles FUE</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr data-filter-item
+        data-f-q="{{ (row.user ~ ' ' ~ row.nombre)|lower }}"
+        data-f-diff="{{ 'si' if row.is_diff else 'no' }}"
+        data-f-dif="{{ row.dif_type or '' }}"
+        data-f-sap="{{ row.sap_code }}">
+      <td class="fueCmpTable__user">{{ row.user }}</td>
+      <td class="fueCmpTable__nombre">{{ row.nombre or '—' }}</td>
+      <td><span class="licTypeBadge licTypeBadge--{{ row.sap_code|lower }}">{{ row.sap_label }}</span></td>
+      <td>
+        {% if row.has_roles and row.role_code != 'NONE' %}
+          <span class="licTypeBadge licTypeBadge--{{ row.role_code|lower }}">{{ row.role_label }}</span>
+        {% else %}
+          <span class="fueCmpDash">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if not row.is_diff %}
+          <span class="fueCmpSitu fueCmpSitu--equal">&check; Igual</span>
+        {% elif row.dif_type == 'noroles' %}
+          <span class="fueCmpSitu fueCmpSitu--noroles">Sin roles activos</span>
+        {% elif row.dif_type == 'over' %}
+          <span class="fueCmpSitu fueCmpSitu--over">&#9650; SAP mayor (sobredimensionado)</span>
+        {% else %}
+          <span class="fueCmpSitu fueCmpSitu--under">&#9660; SAP menor (riesgo sublicencia)</span>
+        {% endif %}
+      </td>
+      <td>
+        {% for fr in row.fue_roles[:3] %}<span class="fueCmpPill">{{ fr.rol }}</span>{% endfor %}
+        {% if row.fue_roles|length > 3 %}<span class="fueCmpTable__nombre">+{{ row.fue_roles|length - 3 }}</span>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="fueCmpEmpty isHidden" id="fue-cmp-list-empty">Sin usuarios para el filtro seleccionado.</p>
+{% else %}
+<p class="fueCmpEmpty">No hay datos suficientes. Importa AGR_USERS/AGR_1251 (SOD) y FUE_Users.xlsx (Licencias) para habilitar esta comparativa.</p>
+{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

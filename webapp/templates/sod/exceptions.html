@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Excepciones SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+
+<form class="sodExceptionForm" method="POST" action="{{ url_for('sod.excepcion_nueva') }}">
+  <div class="sodExceptionForm__field">
+    <label for="regla_id">Regla</label>
+    <select class="sodExceptionForm__input" id="regla_id" name="regla_id" required>
+      {% for rule in rules %}
+        <option value="{{ rule.id }}">{{ rule.id }} - {{ rule.descripcion }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="sodExceptionForm__field">
+    <label for="usuario">Usuario SAP</label>
+    <select class="sodExceptionForm__input" id="usuario" name="usuario" required>
+      <option value="">Selecciona primero una regla...</option>
+    </select>
+  </div>
+  <div class="sodExceptionForm__field">
+    <label for="motivo">Motivo / justificación</label>
+    <input class="sodExceptionForm__input" type="text" id="motivo" name="motivo" required>
+  </div>
+  <button class="sodExceptionForm__submit" type="submit">Registrar excepción</button>
+</form>
+<script type="application/json" id="excepcionesUsersByRule">{{ users_by_rule | tojson }}</script>
+
+<table class="adminTable">
+  <thead>
+    <tr>
+      <th>Regla</th>
+      <th>Usuario</th>
+      <th>Nivel original</th>
+      <th>Motivo</th>
+      <th>Creado por</th>
+      <th>Fecha</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.regla_id }}</td>
+      <td>{{ item.usuario }}</td>
+      <td>{{ item.nivel_original }}</td>
+      <td>{{ item.motivo }}</td>
+      <td>{{ item.creado_por or "-" }}</td>
+      <td>{{ item.fecha.strftime("%Y-%m-%d %H:%M") if item.fecha else "-" }}</td>
+      <td>
+        <form class="adminTable__inlineForm" method="POST" action="{{ url_for('sod.excepcion_eliminar', exception_id=item.id) }}">
+          <button type="submit" class="adminTable__linkButton">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No hay excepciones registradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/exception-users.js') }}"></script>
+{% endblock %}

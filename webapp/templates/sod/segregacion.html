@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Propuestas de segregación{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/roles_criticos.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/segregacion.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>
+  Roles que habilitan, por sí mismos, transacciones de ambos lados de una regla SOD activa
+  (autoconflicto): cualquier usuario al que se le asigne ese rol queda en conflicto, sin
+  importar qué otros roles tenga. Reasignar usuarios no alcanza para resolverlo &mdash; hay
+  que modificar el rol. Para cada uno se propone cómo dividirlo en dos.
+</p>
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+
+{% if rows %}
+<div class="filterBar" data-filter-scope="segregacion-list">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Buscar rol o descripción...">
+  <select class="filterBar__select" data-filter-field="nivel">
+    <option value="">Todos los niveles SOD</option>
+    <option value="CRITICO">Crítico</option>
+    <option value="ALTO">Alto</option>
+    <option value="MEDIO">Medio</option>
+  </select>
+  <span class="filterBar__count" id="segregacion-list-count"></span>
+</div>
+{% endif %}
+
+<div id="segregacion-list">
+{% for row in rows %}
+  <div class="roleCritRow" data-filter-item
+       data-f-q="{{ (row.rol ~ ' ' ~ row.desc)|lower }}"
+       data-f-nivel="{{ row.mx }}">
+    <details>
+      <summary class="roleCritRow__summary">
+        <span class="roleCritRow__name">{{ row.rol }}</span>
+        {% if row.desc %}<span class="roleCritRow__desc">{{ row.desc }}</span>{% endif %}
+        <span class="sodLevelBadge sodLevelBadge--{{ row.mx|lower }}">{{ row.mx }}</span>
+        <span class="roleCritRow__stat">{{ row.cc }} regla(s) en autoconflicto</span>
+        <span class="roleCritRow__stat">{{ row.uc }} usuario(s) asignado(s)</span>
+      </summary>
+      <div class="roleCritRow__detail">
+        {% if row.desc %}
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">Descripción</span><span>{{ row.desc }}</span>
+        </div>
+        {% endif %}
+
+        <div class="segProposal">
+          <div class="segProposal__col">
+            <span class="segProposal__colTitle">Mantener en {{ row.rol }}</span>
+            <span class="segProposal__colSub">{{ row.label_mantener }}</span>
+            <span class="segProposal__pills">
+              {% for tc in row.tcodes_mantener %}<span class="roleCritRow__pill">{{ tc }}</span>{% endfor %}
+            </span>
+          </div>
+          <span class="segProposal__arrow">&rarr;</span>
+          <div class="segProposal__col segProposal__col--new">
+            <span class="segProposal__colTitle">Mover a {{ row.rol_nuevo_sugerido }} (nuevo)</span>
+            <span class="segProposal__colSub">{{ row.label_extraer }}</span>
+            <span class="segProposal__pills">
+              {% for tc in row.tcodes_extraer %}<span class="roleCritRow__pill">{{ tc }}</span>{% endfor %}
+            </span>
+          </div>
+        </div>
+
+        {% if row.tiene_multiples_reglas %}
+        <p class="segProposal__note">
+          Este rol viola {{ row.cc }} reglas activas. La división de arriba resuelve la más
+          severa; revisa las demás después de aplicarla &mdash; pueden necesitar un agrupamiento
+          distinto de tcodes.
+        </p>
+        {% endif %}
+
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">Reglas en autoconflicto ({{ row.cc }})</span>
+        </div>
+        {% for c in row.conflictos %}
+        <div class="segProposal__ruleDetail">
+          <span class="sodLevelBadge sodLevelBadge--{{ c.rule.nivel|lower }}">{{ c.rule.nivel }}</span>
+          <span class="roleCritRow__pill">{{ c.rule.id }}</span>
+          <span>{{ c.rule.descripcion }}</span>
+          <div class="roleCritRow__detailLine">
+            <span class="roleCritRow__detailLabel">{{ c.lado_a_label }}</span>
+            <span class="roleCritRow__pills">
+              {% for tc in c.lado_a_tcodes %}<span class="roleCritRow__pill">{{ tc }}</span>{% endfor %}
+            </span>
+          </div>
+          <div class="roleCritRow__detailLine">
+            <span class="roleCritRow__detailLabel">{{ c.lado_b_label }}</span>
+            <span class="roleCritRow__pills">
+              {% for tc in c.lado_b_tcodes %}<span class="roleCritRow__pill">{{ tc }}</span>{% endfor %}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">Usuarios asignados ({{ row.uc }})</span>
+          <span class="roleCritRow__pills">
+            {% for u in row.usuarios[:30] %}<span class="roleCritRow__pill roleCritRow__pill--user">{{ u }}</span>{% else %}<span class="roleCritEmpty">Sin usuarios activos</span>{% endfor %}
+            {% if row.uc > 30 %}<span class="roleCritEmpty">... y {{ row.uc - 30 }} más</span>{% endif %}
+          </span>
+        </div>
+      </div>
+    </details>
+  </div>
+{% else %}
+  <p class="roleCritEmpty">
+    No se detectaron roles en autoconflicto sobre los datos importados. Esto no significa que
+    no haya conflictos SOD &mdash; revisa "Roles críticos" y "Usuarios en riesgo" para los que
+    surgen al combinar varios roles asignados a un mismo usuario.
+  </p>
+{% endfor %}
+</div>
+{% if rows %}
+<p class="filterBar__empty isHidden" id="segregacion-list-empty">Sin roles para el filtro seleccionado.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

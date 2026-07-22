@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Restablecer Matriz SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-form.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('sod.reglas') }}">Volver a Matriz de reglas</a></p>
+
+<div class="adminForm">
+  <p>
+    Esta acción va a eliminar <strong>todas</strong> las reglas actuales (incluidas las
+    reglas personalizadas y las desactivaciones) y las va a reemplazar por las
+    {{ total_base }} reglas base originales de SAP_SOD_Analyzer_v640.html.
+  </p>
+  <p>Esta acción no se puede deshacer. Las excepciones registradas no se modifican.</p>
+  <form method="POST">
+    <div class="adminForm__actions">
+      <button class="adminForm__submit" type="submit">Restablecer matriz SOD</button>
+      <a class="adminForm__cancel" href="{{ url_for('sod.reglas') }}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

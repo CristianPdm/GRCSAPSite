@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Rol: {{ info.role_name }}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/rolesdb.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('rolesdb.index') }}">← Volver al buscador</a></p>
+
+<!-- Encabezado del rol -->
+<div class="rolesHeader">
+  <div>
+    <h2 class="rolesHeader__name">{{ info.role_name }}</h2>
+    {% if info.description %}
+    <p class="rolesHeader__desc">{{ info.description }}</p>
+    {% endif %}
+    {% if info.parent %}
+    <p class="rolesHeader__desc">Rol padre: <a href="{{ url_for('rolesdb.rol_detail', role_name=info.parent) }}">{{ info.parent }}</a></p>
+    {% endif %}
+    <div class="rolesHeader__badges">
+      {% if info.is_composite %}
+        <span class="roleBadge roleBadge--compuesto">Rol compuesto · {{ info.children|length }} hijo(s)</span>
+      {% else %}
+        <span class="roleBadge roleBadge--simple">Rol simple</span>
+      {% endif %}
+      {% if fiori_count > 0 %}
+      <span class="roleBadge roleBadge--fiori">{{ fiori_count }} Fiori</span>
+      {% endif %}
+      {% if clasica_count > 0 %}
+      <span class="roleBadge roleBadge--clasica">{{ clasica_count }} Clasica(s)</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Stats rápidas -->
+<div class="rolesStats">
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ tcodes|length }}</span>
+    <span class="rolesStats__label">Transacciones totales</span>
+  </div>
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ fiori_count }}</span>
+    <span class="rolesStats__label">Apps Fiori</span>
+  </div>
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ clasica_count }}</span>
+    <span class="rolesStats__label">Transacciones clásicas</span>
+  </div>
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ info.user_count }}</span>
+    <span class="rolesStats__label">Usuarios vigentes</span>
+  </div>
+  {% if info.is_composite %}
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ info.children|length }}</span>
+    <span class="rolesStats__label">Roles hijos</span>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Roles hijos (si es compuesto) -->
+{% if info.is_composite %}
+<div class="rolesChildren">
+  <p class="rolesChildren__title">Roles simples incluidos en este compuesto</p>
+  <div class="rolesChildren__list">
+    {% for child in info.children %}
+    <a class="rolesChildren__item" href="{{ url_for('rolesdb.rol_detail', role_name=child.role_name) }}">
+      <span class="rolesChildren__itemName">{{ child.role_name }}</span>
+      {% if child.description %}
+      <span class="rolesChildren__itemDesc">{{ child.description }}</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Tabla de transacciones -->
+{% if tcodes %}
+<div class="filterBar" data-filter-scope="tcode-table">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Filtrar tcode o descripción...">
+  <select class="filterBar__select" data-filter-field="tipo">
+    <option value="">Todos los tipos</option>
+    <option value="fiori">Fiori</option>
+    <option value="clasica">Clásica</option>
+  </select>
+  <span class="filterBar__count" id="tcode-table-count"></span>
+</div>
+
+<div class="tableWrapper" id="tcode-table">
+<table class="rolesTcodeTable">
+  <thead>
+    <tr>
+      <th>TCode / App</th>
+      <th>Tipo</th>
+      <th>Descripcion</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in tcodes %}
+    <tr data-filter-item
+        data-f-q="{{ (t.tcode ~ ' ' ~ t.descripcion ~ ' ' ~ t.titulo_fiori)|lower }}"
+        data-f-tipo="{{ 'fiori' if t.es_fiori else 'clasica' }}">
+      <td>
+        <a class="rolesTcodeTable__link" href="{{ url_for('rolesdb.tcode_search') }}?q={{ t.tcode }}">{{ t.tcode }}</a>
+      </td>
+      <td>
+        {% if t.es_fiori %}
+        <span class="tcodeTypeBadge tcodeTypeBadge--fiori">Fiori</span>
+        {% else %}
+        <span class="tcodeTypeBadge tcodeTypeBadge--clasica">Clasica</span>
+        {% endif %}
+      </td>
+      <td class="rolesTcodeTable__desc">
+        {{ t.descripcion or '—' }}
+        {% if t.titulo_fiori %}
+        <span class="rolesTcodeTable__subtitulo">{{ t.titulo_fiori }}</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% else %}
+<div class="rolesEmpty">
+  <div class="rolesEmpty__icon">📋</div>
+  <p class="rolesEmpty__text">No se encontraron transacciones para este rol.<br>
+  Verificá que los archivos AGR_1251 y/o AGR_HIER estén importados.</p>
+</div>
+{% endif %}
+
+<!-- Panel de usuarios -->
+{% if info.users %}
+<div class="rolesUsers">
+  <div class="rolesUsers__header">
+    <p class="rolesUsers__title">Usuarios asignados ({{ info.user_count }})</p>
+    <button class="rolesUsers__toggle" id="toggle-users" type="button">Mostrar</button>
+  </div>
+  <div class="rolesUsers__list" id="users-list" style="display:none">
+    {% for u in info.users %}
+    <span class="rolesUsers__chip">{{ u }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var btn  = document.getElementById("toggle-users");
+  var list = document.getElementById("users-list");
+  if (btn && list) {
+    btn.addEventListener("click", function () {
+      var hidden = list.style.display === "none";
+      list.style.display = hidden ? "flex" : "none";
+      btn.textContent = hidden ? "Ocultar" : "Mostrar";
+    });
+  }
+});
+</script>
+{% endblock %}

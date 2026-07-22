@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Módulo Licencias SAP{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Consumo de licencias FUE (Full Use Equivalent) según el tipo oficial asignado a cada usuario.</p>
+
+{% if summary.has_data %}
+<div class="licSummary">
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.total_users }}</span>
+    <span class="licSummary__label">Usuarios con licencia</span>
+  </div>
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.advanced }}</span>
+    <span class="licSummary__label">GB Advanced Use</span>
+  </div>
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.core }}</span>
+    <span class="licSummary__label">GC Core Use</span>
+  </div>
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.self_service }}</span>
+    <span class="licSummary__label">GD Self-Service Use</span>
+  </div>
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.unassigned }}</span>
+    <span class="licSummary__label">Sin tipo</span>
+  </div>
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.total_fue }}</span>
+    <span class="licSummary__label">FUE total</span>
+  </div>
+  {% if summary.inactive_licensed > 0 %}
+  <div class="licSummary__card">
+    <span class="licSummary__value">{{ summary.inactive_licensed }}</span>
+    <span class="licSummary__label">Licenciados sin uso reciente</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="licChartCard">
+  <h2 class="licChartCard__title">Distribución de tipos de licencia</h2>
+  {% set total_lic = summary.advanced + summary.core + summary.self_service + summary.unassigned %}
+  {% if total_lic > 0 %}
+    {% set circ = 314.16 %}
+    {% set adv_dash = (summary.advanced / total_lic * circ) %}
+    {% set core_dash = (summary.core / total_lic * circ) %}
+    {% set self_dash = (summary.self_service / total_lic * circ) %}
+    {% set none_dash = (summary.unassigned / total_lic * circ) %}
+    {% set off_core = adv_dash %}
+    {% set off_self = adv_dash + core_dash %}
+    {% set off_none = adv_dash + core_dash + self_dash %}
+    <div class="licChart">
+      <svg class="licChart__svg" viewBox="0 0 120 120" width="160" height="160" role="img" aria-label="Distribución de tipos de licencia">
+        <g class="licChart__rotate">
+          <circle class="licChart__track" cx="60" cy="60" r="50" />
+          <circle class="licChart__seg licChart__seg--adv" cx="60" cy="60" r="50"
+            stroke-dasharray="{{ '%.2f'|format(adv_dash) }} {{ '%.2f'|format(circ - adv_dash) }}"
+            stroke-dashoffset="0" />
+          <circle class="licChart__seg licChart__seg--core" cx="60" cy="60" r="50"
+            stroke-dasharray="{{ '%.2f'|format(core_dash) }} {{ '%.2f'|format(circ - core_dash) }}"
+            stroke-dashoffset="-{{ '%.2f'|format(off_core) }}" />
+          <circle class="licChart__seg licChart__seg--self" cx="60" cy="60" r="50"
+            stroke-dasharray="{{ '%.2f'|format(self_dash) }} {{ '%.2f'|format(circ - self_dash) }}"
+            stroke-dashoffset="-{{ '%.2f'|format(off_self) }}" />
+          <circle class="licChart__seg licChart__seg--none" cx="60" cy="60" r="50"
+            stroke-dasharray="{{ '%.2f'|format(none_dash) }} {{ '%.2f'|format(circ - none_dash) }}"
+            stroke-dashoffset="-{{ '%.2f'|format(off_none) }}" />
+        </g>
+        <text class="licChart__centerValue" x="60" y="58" text-anchor="middle">{{ summary.total_fue }}</text>
+        <text class="licChart__centerLabel" x="60" y="74" text-anchor="middle">FUE total</text>
+      </svg>
+      <ul class="licChart__legend">
+        <li class="licChart__legendItem">
+          <span class="licChart__legendDot licChart__legendDot--adv"></span>
+          GB Advanced Use <strong>{{ summary.advanced }}</strong>
+        </li>
+        <li class="licChart__legendItem">
+          <span class="licChart__legendDot licChart__legendDot--core"></span>
+          GC Core Use <strong>{{ summary.core }}</strong>
+        </li>
+        <li class="licChart__legendItem">
+          <span class="licChart__legendDot licChart__legendDot--self"></span>
+          GD Self-Service Use <strong>{{ summary.self_service }}</strong>
+        </li>
+        <li class="licChart__legendItem">
+          <span class="licChart__legendDot licChart__legendDot--none"></span>
+          Sin tipo <strong>{{ summary.unassigned }}</strong>
+        </li>
+      </ul>
+    </div>
+  {% else %}
+    <p class="licInactiveFlag">No hay usuarios con licencia asignada.</p>
+  {% endif %}
+</div>
+{% else %}
+<p>Todavía no se importaron datos de licencias (FUE_Users.xlsx).</p>
+{% endif %}
+{% endblock %}

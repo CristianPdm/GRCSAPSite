@@ -1,0 +1,107 @@
+/* Estilos exclusivos del componente Topbar (templates/_topbar.html) */
+
+.topbar {
+  height: var(--topbar-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background-color: var(--color-topbar-bg);
+  border-bottom: 1px solid var(--color-topbar-border);
+  padding: 0 var(--spacing-lg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar__menuBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.topbar__menuBtn:hover {
+  background-color: var(--color-surface-muted);
+}
+
+.topbar__pageTitle {
+  flex: 1;
+  margin: 0;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.topbar__roleBadge {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border-radius: var(--radius-pill);
+  padding: 3px 11px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.topbar__userInfo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.topbar__userName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar__logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.topbar__logout:hover {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+@media (max-width: 880px) {
+  .topbar__menuBtn {
+    display: inline-flex;
+  }
+
+  .topbar__userName {
+    max-width: 110px;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar__roleBadge {
+    display: none;
+  }
+}

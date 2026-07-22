@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/login.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="loginPage">
+  <form class="loginCard" method="POST" action="{{ url_for('auth.login') }}">
+    <div class="loginCard__brand">
+      <span class="loginCard__brandMark">{{ icons.icon('check-shield', 20) }}</span>
+      <h1 class="loginCard__title">{{ app_name }}</h1>
+    </div>
+    <p class="loginCard__subtitle">Control de licencias SAP y GRC &middot; Grupo Simpa</p>
+
+    <label class="loginCard__label" for="username">Usuario</label>
+    <input class="loginCard__input" type="text" id="username" name="username" required autofocus>
+
+    <label class="loginCard__label" for="password">Contraseña</label>
+    <input class="loginCard__input" type="password" id="password" name="password" required>
+
+    <button class="loginCard__button" type="submit">Entrar</button>
+
+    <p class="loginCard__footer">Acceso restringido &middot; uso interno Grupo Simpa SA</p>
+  </form>
+</div>
+{% endblock %}

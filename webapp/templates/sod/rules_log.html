@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Log de cambios - Matriz SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Últimos 200 cambios sobre la matriz de reglas SOD: altas, ediciones, activaciones,
+   importaciones y restablecimientos.</p>
+<p class="backLink"><a href="{{ url_for('sod.reglas') }}">Volver a Matriz de reglas</a></p>
+
+<table class="adminTable">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Usuario</th>
+      <th>Acción</th>
+      <th>Detalle</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td>{{ e.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+      <td>{{ e.username or "-" }}</td>
+      <td>{{ e.action }}</td>
+      <td>{{ e.details or "-" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Sin cambios registrados todavía.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,212 @@
+/* Estilos exclusivos del componente Sidebar (templates/_sidebar.html) */
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background-color: var(--color-sidebar-bg);
+  color: var(--color-sidebar-text);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sidebar);
+  z-index: 30;
+  transition: left var(--transition-fast);
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-pill);
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md);
+  border-bottom: 1px solid var(--color-sidebar-border);
+  color: var(--color-sidebar-text-active);
+}
+
+.sidebar__brandMark {
+  display: inline-flex;
+  color: var(--color-sidebar-accent);
+  flex-shrink: 0;
+}
+
+.sidebar__brandImg {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sidebar__brandText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+  overflow: hidden;
+}
+
+.sidebar__brandTitle {
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.sidebar__brandVersion {
+  font-size: 11px;
+  color: var(--color-sidebar-text-muted);
+}
+
+.sidebar__nav {
+  flex: 1;
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebarLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--color-sidebar-text);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.sidebarLink:hover {
+  background-color: var(--color-sidebar-bg-raised);
+  color: var(--color-sidebar-text-active);
+  text-decoration: none;
+}
+
+.sidebarLink--active {
+  background-color: var(--color-sidebar-bg-active);
+  color: var(--color-sidebar-text-active);
+  box-shadow: inset 3px 0 0 var(--color-sidebar-accent);
+}
+
+.sidebarLink__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.sidebarLink__text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Grupos colapsables (SOD/GRC, Licencias, Configuracion) */
+.sidebarGroup {
+  border-radius: var(--radius-sm);
+}
+
+.sidebarGroup__summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-sidebar-text);
+  font-size: 13.5px;
+  font-weight: 500;
+  list-style: none;
+  user-select: none;
+}
+
+.sidebarGroup__summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebarGroup__summary:hover {
+  background-color: var(--color-sidebar-bg-raised);
+  color: var(--color-sidebar-text-active);
+}
+
+.sidebarGroup__summary .sidebarLink__text {
+  flex: 1;
+}
+
+.sidebarGroup__chevron {
+  display: inline-flex;
+  opacity: 0.7;
+  transition: transform var(--transition-fast);
+}
+
+.sidebarGroup[open] > .sidebarGroup__summary .sidebarGroup__chevron {
+  transform: rotate(180deg);
+}
+
+.sidebarGroup__items {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 0 6px 38px;
+  gap: 1px;
+}
+
+.sidebarSubLink {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--color-sidebar-text-muted);
+  font-size: 13px;
+}
+
+.sidebarSubLink:hover {
+  background-color: var(--color-sidebar-bg-raised);
+  color: var(--color-sidebar-text-active);
+  text-decoration: none;
+}
+
+.sidebarSubLink--active {
+  color: var(--color-sidebar-text-active);
+  font-weight: 600;
+  background-color: var(--color-sidebar-bg-active);
+}
+
+.sidebarSubLink__divider {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-sidebar-text-muted);
+  opacity: 0.6;
+  padding: 10px 10px 3px;
+}
+
+.sidebar__footer {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-sidebar-border);
+  font-size: 11px;
+  color: var(--color-sidebar-text-muted);
+}
+
+/* ---- Comportamiento movil: la sidebar se oculta fuera de pantalla y se
+   muestra con el checkbox oculto #navToggle (sin JS). ---- */
+@media (max-width: 880px) {
+  .sidebar {
+    position: fixed;
+    left: calc(-1 * var(--sidebar-width));
+    top: 0;
+    z-index: 100;
+  }
+
+  .appShell__navToggle:checked ~ .sidebar {
+    left: 0;
+  }
+}

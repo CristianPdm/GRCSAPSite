@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Analisis de Roles y Transacciones{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/rolesdb.module.css') }}">
+{% endblock %}
+{% block content %}
+
+<p class="pageIntro">
+  Explora las transacciones y apps Fiori de un rol, o en que roles aparece una transaccion.
+  El sistema identifica automaticamente si es una <strong>App Fiori</strong> o una <strong>Transaccion Clasica</strong>.
+</p>
+
+<div class="rolesSearch">
+
+  <!-- Buscar por Rol -->
+  <div class="rolesSearchCard">
+    <div class="rolesSearchCard__icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 5.6V11c0 5 3.2 8.3 7.5 10 4.3-1.7 7.5-5 7.5-10V5.6Z"/></svg>
+    </div>
+    <p class="rolesSearchCard__title">Buscar por Rol</p>
+    <p class="rolesSearchCard__hint">Ver las transacciones y apps Fiori asignadas a un rol, con usuarios vigentes.</p>
+    <form action="{{ url_for('rolesdb.rol_detail', role_name='__PLACEHOLDER__') }}" method="get" id="form-rol">
+      <div class="rolesSearchCard__form">
+        <div class="rolesSearchCard__inputWrap">
+          <span class="rolesSearchCard__inputIcon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          </span>
+          <input class="rolesSearchCard__input" type="text" id="input-rol"
+                 name="q" autocomplete="off"
+                 placeholder="Ej: ZEWM_OPER_TR_INT_R"
+                 aria-label="Nombre de rol SAP">
+          <div class="rolesAutocomplete" id="ac-rol" style="display:none"></div>
+        </div>
+        <button class="rolesSearchCard__btn" type="submit">Ver rol</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Buscar por Transaccion -->
+  <div class="rolesSearchCard">
+    <div class="rolesSearchCard__icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>
+    </div>
+    <p class="rolesSearchCard__title">Buscar por Transaccion / App</p>
+    <p class="rolesSearchCard__hint">Ver todos los roles que contienen una transaccion o app Fiori especifica.</p>
+    <form action="{{ url_for('rolesdb.tcode_search') }}" method="get" id="form-tcode">
+      <div class="rolesSearchCard__form">
+        <div class="rolesSearchCard__inputWrap">
+          <span class="rolesSearchCard__inputIcon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          </span>
+          <input class="rolesSearchCard__input" type="text" id="input-tcode"
+                 name="q" autocomplete="off"
+                 placeholder="Ej: ME51N, VF01, F-02"
+                 aria-label="Codigo de transaccion SAP">
+          <div class="rolesAutocomplete" id="ac-tcode" style="display:none"></div>
+        </div>
+        <button class="rolesSearchCard__btn" type="submit">Buscar</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  function setupAutocomplete(inputId, dropdownId, apiUrl, labelKey, descKey, onSelect) {
+    var input    = document.getElementById(inputId);
+    var dropdown = document.getElementById(dropdownId);
+    var timer    = null;
+    var items    = [];
+    var active   = -1;
+
+    function hide() { dropdown.style.display = "none"; active = -1; }
+    function show() { dropdown.style.display = "block"; }
+
+    function render(data) {
+      items = data;
+      if (!data.length) {
+        dropdown.innerHTML = '<div class="rolesAutocomplete__empty">Sin resultados</div>';
+        show(); return;
+      }
+      dropdown.innerHTML = data.map(function (d, i) {
+        return '<div class="rolesAutocomplete__item" data-idx="' + i + '">' +
+          '<span class="rolesAutocomplete__name">' + d[labelKey] + '</span>' +
+          (d[descKey] ? '<span class="rolesAutocomplete__desc">' + d[descKey] + '</span>' : '') +
+          '</div>';
+      }).join('');
+      show();
+    }
+
+    function doFetch(q) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", apiUrl + "?q=" + encodeURIComponent(q));
+      xhr.onload = function () {
+        if (xhr.status === 200) render(JSON.parse(xhr.responseText));
+      };
+      xhr.send();
+    }
+
+    input.addEventListener("input", function () {
+      clearTimeout(timer);
+      var q = input.value.trim();
+      if (q.length < 1) { hide(); return; }
+      timer = setTimeout(function () { doFetch(q); }, 180);
+    });
+
+    dropdown.addEventListener("click", function (e) {
+      var item = e.target.closest(".rolesAutocomplete__item");
+      if (!item) return;
+      var d = items[parseInt(item.dataset.idx)];
+      if (d) { input.value = d[labelKey]; hide(); onSelect(d); }
+    });
+
+    input.addEventListener("keydown", function (e) {
+      var visible = dropdown.style.display !== "none";
+      var rows = dropdown.querySelectorAll(".rolesAutocomplete__item");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        active = Math.min(active + 1, rows.length - 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        active = Math.max(active - 1, 0);
+      } else if (e.key === "Enter" && active >= 0 && visible) {
+        e.preventDefault();
+        var d = items[active];
+        if (d) { input.value = d[labelKey]; hide(); onSelect(d); }
+        return;
+      } else if (e.key === "Escape") { hide(); return; }
+      rows.forEach(function (r, i) {
+        r.classList.toggle("rolesAutocomplete__item--active", i === active);
+      });
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) hide();
+    });
+  }
+
+  // --- Rol ---
+  var formRol = document.getElementById("form-rol");
+  setupAutocomplete(
+    "input-rol", "ac-rol",
+    "{{ url_for('rolesdb.api_roles') }}",
+    "role_name", "description",
+    function (d) {
+      window.location.href = "{{ url_for('rolesdb.rol_detail', role_name='__PH__') }}".replace("__PH__", encodeURIComponent(d.role_name));
+    }
+  );
+  formRol.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var val = document.getElementById("input-rol").value.trim();
+    if (val) {
+      window.location.href = "{{ url_for('rolesdb.rol_detail', role_name='__PH__') }}".replace("__PH__", encodeURIComponent(val));
+    }
+  });
+
+  // --- TCode ---
+  setupAutocomplete(
+    "input-tcode", "ac-tcode",
+    "{{ url_for('rolesdb.api_tcodes') }}",
+    "tcode", "description",
+    function (d) {
+      document.getElementById("form-tcode").submit();
+    }
+  );
+})();
+</script>
+{% endblock %}

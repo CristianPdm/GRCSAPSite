@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Usuarios en riesgo{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/usuarios_riesgo.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Cruce de conflictos SOD, FUE (por roles y oficial SAP) e inactividad por usuario.</p>
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+{% if usr02_updated %}
+<p class="dataFreshness">Estado de cuenta y último login SAP (USR02) actualizados el <strong>{{ (usr02_updated|local_dt).strftime('%d/%m/%Y %H:%M') }}</strong>.</p>
+{% endif %}
+
+{% if rows %}
+<div class="filterBar" data-filter-scope="user-risk-list">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Buscar usuario o nombre...">
+  <select class="filterBar__select" data-filter-field="nivel">
+    <option value="">Todos los niveles SOD</option>
+    <option value="CRITICO">Crítico</option>
+    <option value="ALTO">Alto</option>
+    <option value="MEDIO">Medio</option>
+    <option value="SIN">Sin conflictos</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="ia" data-filter-mode="token">
+    <option value="">Cualquier antigüedad</option>
+    <option value="30">Inactivo &gt; 30 días</option>
+    <option value="90">Inactivo &gt; 90 días</option>
+    <option value="180">Inactivo &gt; 180 días</option>
+    <option value="365">Inactivo &gt; 365 días</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="fue">
+    <option value="">Todos los FUE</option>
+    <option value="ADV">GB Advanced Use</option>
+    <option value="CORE">GC Core Use</option>
+    <option value="SELF">GD Self-Service Use</option>
+    <option value="NONE">Sin tipo FUE</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="bloqueo">
+    <option value="">Bloqueados y activos</option>
+    <option value="BLOQUEADO">Solo bloqueados</option>
+    <option value="ACTIVO">Solo activos (no bloqueados)</option>
+  </select>
+  <span class="filterBar__count" id="user-risk-list-count"></span>
+</div>
+{% endif %}
+
+<div id="user-risk-list">
+{% for row in rows %}
+  {% set fue_shown_code = row.fue_from_db_code if row.has_license_data else row.fue_type %}
+  {% set fue_shown_label = row.fue_from_db_label if row.has_license_data else row.fue_label %}
+  {% set ia_tokens = [] %}
+  {% if row.days is not none %}
+    {% if row.days > 30 %}{% set _ = ia_tokens.append('30') %}{% endif %}
+    {% if row.days > 90 %}{% set _ = ia_tokens.append('90') %}{% endif %}
+    {% if row.days > 180 %}{% set _ = ia_tokens.append('180') %}{% endif %}
+    {% if row.days > 365 %}{% set _ = ia_tokens.append('365') %}{% endif %}
+  {% endif %}
+  <div class="userRiskRow" data-filter-item
+       data-f-q="{{ (row.user ~ ' ' ~ row.nombre)|lower }}"
+       data-f-nivel="{{ row.mx }}"
+       data-f-ia="{{ ia_tokens|join(' ') }}"
+       data-f-fue="{{ fue_shown_code or 'NONE' }}"
+       data-f-bloqueo="{{ 'BLOQUEADO' if row.bloqueado else ('ACTIVO' if row.has_user_status else '') }}">
+    <details>
+      <summary class="userRiskRow__summary">
+        <span class="userRiskRow__user">{{ row.user }}</span>
+        {% if row.nombre %}<span class="userRiskRow__nombre">{{ row.nombre }}</span>{% endif %}
+        <span class="sodLevelBadge sodLevelBadge--{{ row.mx|lower }}">{{ row.mx }}</span>
+        <span class="userRiskRow__fue userRiskRow__fue--{{ (fue_shown_code or 'none')|lower }}">{{ fue_shown_label or 'Sin tipo FUE' }}</span>
+        {% if row.bloqueado %}<span class="userRiskRow__lockBadge">Bloqueado</span>{% endif %}
+        <span class="userRiskRow__stat">{{ row.cc }} conflicto(s)</span>
+        <span class="userRiskRow__stat">{{ row.role_count }} rol(es)</span>
+        {% if row.last_access %}
+          <span class="userRiskRow__stat">Último acceso: {{ row.last_access.strftime('%d/%m/%Y') }} ({{ row.days }} d.)</span>
+        {% endif %}
+      </summary>
+      <div class="userRiskRow__detail">
+        {% if row.has_user_status %}
+          <div class="userRiskRow__detailLine">
+            <span class="userRiskRow__detailLabel">Estado de cuenta (SAP)</span>
+            <span>{{ row.lock_label }}</span>
+          </div>
+          <div class="userRiskRow__detailLine">
+            <span class="userRiskRow__detailLabel">Último login (SAP)</span>
+            <span>{{ row.ultimo_login_sap.strftime('%d/%m/%Y') if row.ultimo_login_sap else 'Sin registro' }}</span>
+          </div>
+        {% endif %}
+        {% if row.has_license_data %}
+          <div class="userRiskRow__detailLine">
+            <span class="userRiskRow__detailLabel">Nombre</span><span>{{ row.nombre or '—' }}</span>
+          </div>
+          <div class="userRiskRow__detailLine">
+            <span class="userRiskRow__detailLabel">Último acceso</span>
+            <span>
+              {% if row.last_access %}{{ row.last_access.strftime('%d/%m/%Y') }} ({{ row.days }} días)
+                {% if row.days and row.days > 90 %}<span class="userRiskRow__warning">&nbsp;Inactivo hace más de 90 días</span>{% endif %}
+              {% else %}Sin registro{% endif %}
+            </span>
+          </div>
+          <div class="userRiskRow__detailLine">
+            <span class="userRiskRow__detailLabel">FUE asignado (SAP)</span>
+            <span>{{ row.fue_from_db_label or 'Sin tipo FUE' }}{% if row.indice_fue %} &middot; indice {{ row.indice_fue }}{% endif %}</span>
+          </div>
+        {% endif %}
+        <div class="userRiskRow__detailLine">
+          <span class="userRiskRow__detailLabel">Conflictos SOD</span>
+          <span class="userRiskRow__pills">
+            {% for rule_id in row.conflicts %}<span class="userRiskRow__pill">{{ rule_id }}</span>{% else %}<span class="userRiskEmpty">Sin conflictos</span>{% endfor %}
+          </span>
+        </div>
+        <div class="userRiskRow__detailLine">
+          <span class="userRiskRow__detailLabel">FUE por roles (derivado)</span>
+          <span>{{ row.fue_label }}</span>
+        </div>
+        <div class="userRiskRow__detailLine">
+          <span class="userRiskRow__detailLabel">Roles con FUE</span>
+          <span class="userRiskRow__pills">
+            {% for fr in row.fue_roles %}<span class="userRiskRow__pill userRiskRow__pill--role">{{ fr.rol }} ({{ fr.label }})</span>{% else %}<span class="userRiskEmpty">Sin roles con FUE clasificado</span>{% endfor %}
+          </span>
+        </div>
+      </div>
+    </details>
+  </div>
+{% else %}
+  <p class="userRiskEmpty">No hay usuarios con roles activos. Importa AGR_USERS / AGR_1251 para ver esta vista.</p>
+{% endfor %}
+</div>
+{% if rows %}
+<p class="filterBar__empty isHidden" id="user-risk-list-empty">Sin usuarios para el filtro seleccionado.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

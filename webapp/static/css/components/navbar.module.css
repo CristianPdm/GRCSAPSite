@@ -1,0 +1,115 @@
+/* Estilos exclusivos del componente Navbar (templates/_navbar.html) */
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  background-color: var(--color-primary);
+  color: #fff;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.navbar__brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.navbar__title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.navbar__version {
+  font-size: 11px;
+  color: #cfe0ee;
+}
+
+.navbar__links {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.navbar__link {
+  color: #fff;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.navbar__link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.navbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 13px;
+}
+
+.navbar__role {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
+
+.navbar__logout {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+}
+
+/* Menu desplegable "Configuracion" (solo administracion) */
+.navbar__configMenu {
+  position: relative;
+}
+
+.navbar__configButton {
+  list-style: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  user-select: none;
+}
+
+.navbar__configButton::-webkit-details-marker {
+  display: none;
+}
+
+.navbar__configButton:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.navbar__configPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.navbar__configLink {
+  color: var(--color-text);
+  font-size: 13px;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.navbar__configLink:hover {
+  background-color: var(--color-bg);
+  text-decoration: none;
+}

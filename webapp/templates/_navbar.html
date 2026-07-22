@@ -1,0 +1,42 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/navbar.module.css') }}">
+<nav class="navbar">
+  <div class="navbar__brand">
+    <span class="navbar__title">{{ app_name }}</span>
+    <span class="navbar__version">{{ app_version }}</span>
+  </div>
+
+  <div class="navbar__links">
+    <a class="navbar__link" href="{{ url_for('main.dashboard') }}">Panel</a>
+
+    {% if current_user.has_permission('can_view_sod') %}
+      <a class="navbar__link" href="{{ url_for('sod.index') }}">SOD / GRC</a>
+    {% endif %}
+
+    {% if current_user.has_permission('can_view_licenses') %}
+      <a class="navbar__link" href="{{ url_for('licenses.index') }}">Licencias SAP</a>
+    {% endif %}
+
+  </div>
+
+  <div class="navbar__user">
+    {% if current_user.has_permission('can_manage_users') or current_user.has_permission('can_manage_roles') or current_user.has_permission('can_view_audit_log') %}
+      <details class="navbar__configMenu">
+        <summary class="navbar__configButton">Configuración</summary>
+        <div class="navbar__configPanel">
+          {% if current_user.has_permission('can_manage_users') %}
+            <a class="navbar__configLink" href="{{ url_for('admin.users') }}">Usuarios</a>
+          {% endif %}
+          {% if current_user.has_permission('can_manage_roles') %}
+            <a class="navbar__configLink" href="{{ url_for('admin.roles') }}">Roles</a>
+          {% endif %}
+          {% if current_user.has_permission('can_view_audit_log') %}
+            <a class="navbar__configLink" href="{{ url_for('admin.audit_log') }}">Auditoría</a>
+          {% endif %}
+        </div>
+      </details>
+    {% endif %}
+    <span class="navbar__username">{{ current_user.full_name or current_user.username }}</span>
+    <span class="navbar__role">{{ current_user.role.name }}</span>
+    <a class="navbar__logout" href="{{ url_for('auth.logout') }}">Salir</a>
+  </div>
+</nav>

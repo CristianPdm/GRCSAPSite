@@ -1,0 +1,119 @@
+/* Estilos exclusivos de templates/licenses/fue_optimizacion.html */
+
+.fueOptKpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.fueOptKpi__card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.fueOptKpi__value {
+  font-size: 26px;
+  font-weight: 700;
+  display: block;
+}
+
+.fueOptKpi__value--ok { color: var(--color-success); }
+.fueOptKpi__value--warn { color: var(--color-warning); }
+.fueOptKpi__value--crit { color: var(--color-error); }
+.fueOptKpi__value--neutral { color: var(--color-text); }
+
+.fueOptKpi__label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.fueOptKpi__sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.fueOptSection {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+}
+
+.fueOptSection__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fueOptSection__title {
+  font-size: 15px;
+  margin: 0;
+}
+
+.fueOptSection table {
+  font-size: 13px;
+}
+
+.fueOptSection th {
+  text-align: left;
+  background-color: var(--color-bg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.fueOptSection td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.fueOptSection__user {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.fueOptDays {
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.fueOptDays--high { color: var(--color-error); }
+.fueOptDays--medium { color: var(--color-warning); }
+
+.fueOptSavings {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.fueOptRolesFlag--ok {
+  color: var(--color-success);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fueOptRolesFlag--warn {
+  color: var(--color-warning);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fueOptEmpty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: var(--spacing-md);
+}

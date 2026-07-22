@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Importar datos SAP - Licencias{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="folderImportCard">
+  <h2 class="folderImportCard__title">Importar desde carpeta</h2>
+  <p class="folderImportCard__hint">
+    Configurá la carpeta del servidor donde se dejan los Excel exportados de SAP
+    (FUE_Users.xlsx, FUE_Rol.xlsx). Al importar, el sistema busca cada archivo por su
+    nombre y carga automáticamente los que encuentre. Es la misma carpeta que usa el
+    módulo SOD/GRC.
+  </p>
+
+  <form method="POST">
+    <input type="hidden" name="accion" value="guardar_carpeta">
+    <div class="folderImportCard__row">
+      <label class="folderImportCard__field">
+        Carpeta de importación SAP
+        <input class="folderImportCard__input" type="text" name="carpeta"
+               value="{{ carpeta }}" placeholder="Ej: C:\SAP_Exports">
+      </label>
+      <button class="btn btn--secondary" type="submit">Guardar carpeta</button>
+    </div>
+  </form>
+
+  <form method="POST" data-import-form>
+    <input type="hidden" name="accion" value="importar_carpeta">
+    <div class="folderImportCard__actions">
+      <button class="btn btn--primary" type="submit" data-import-submit {{ "disabled" if not carpeta }}>
+        Importar todo desde la carpeta
+      </button>
+    </div>
+    <div class="folderImportCard__progress isHidden" data-import-progress>
+      <div class="folderImportCard__progressBar">
+        <div class="folderImportCard__progressBarFill"></div>
+      </div>
+      <span class="folderImportCard__progressText">Importando archivos desde la carpeta, puede tardar unos segundos…</span>
+    </div>
+  </form>
+
+  {% if scan_resultado %}
+  <ul class="folderImportCard__results">
+    {% for item in scan_resultado %}
+      <li class="folderImportCard__resultItem folderImportCard__resultItem--{{ 'ok' if item.ok else ('error' if item.found else 'missing') }}">
+        <strong>{{ item.tipo }}.xlsx</strong>:
+        {% if item.ok %}{{ item.count }} filas importadas ({{ item.label }})
+        {% elif item.found %}error al importar — {{ item.error }}
+        {% else %}no se encontró en la carpeta
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+<p>FUE_Users.xlsx es la fuente oficial usada para el cálculo de licencias. FUE_Rol.xlsx
+   queda como referencia/auditoría del tipo asignado a nivel de rol. También podés subir
+   ambos a mano, de a uno.</p>
+
+<div class="licImportGrid">
+  <div class="licImportCard">
+    <h2 class="licImportCard__title">FUE_Users.xlsx (oficial)</h2>
+    <p class="licImportCard__count">Usuarios con tipo FUE importados: {{ stats.fue_users }}</p>
+    <form class="licImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="FUE_USERS">
+      <input class="licImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="licImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="licImportCard">
+    <h2 class="licImportCard__title">FUE_Rol.xlsx (referencia)</h2>
+    <p class="licImportCard__count">Roles con tipo FUE importados: {{ stats.fue_roles }}</p>
+    <form class="licImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="FUE_ROL">
+      <input class="licImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="licImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+</div>
+
+<p class="backLink"><a href="{{ url_for('licenses.index') }}">Volver al módulo de Licencias</a></p>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/import-progress.js') }}"></script>
+{% endblock %}

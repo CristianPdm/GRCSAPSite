@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Transacción: {{ tcode or 'Búsqueda' }}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/rolesdb.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('rolesdb.index') }}">← Volver al buscador</a></p>
+
+{% if not tcode %}
+{# Formulario inline si se llegó sin parámetro #}
+<form action="{{ url_for('rolesdb.tcode_search') }}" method="get" style="max-width:400px">
+  <div class="rolesSearchCard__form">
+    <input class="rolesSearchCard__input" type="text" name="q"
+           placeholder="Ingresá el código de transacción" autofocus>
+    <button class="rolesSearchCard__btn" type="submit">Buscar</button>
+  </div>
+</form>
+
+{% else %}
+
+{% if roles %}
+
+<!-- Encabezado de la transacción -->
+<div class="rolesHeader">
+  <div>
+    <h2 class="rolesHeader__name">{{ tcode }}</h2>
+    {% if desc %}
+    <p class="rolesHeader__desc">{{ desc }}</p>
+    {% endif %}
+    {% if titulo_fiori %}
+    <p class="rolesHeader__desc rolesHeader__descItalic">{{ titulo_fiori }}</p>
+    {% endif %}
+    <div class="rolesHeader__badges">
+      {% if es_fiori %}
+      <span class="roleBadge roleBadge--fiori">App Fiori</span>
+      {% else %}
+      <span class="roleBadge roleBadge--clasica">Transaccion Clasica</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="rolesStats">
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ roles|length }}</span>
+    <span class="rolesStats__label">Roles con esta transacción</span>
+  </div>
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ roles|sum(attribute='user_count') }}</span>
+    <span class="rolesStats__label">Usuarios totales (con solapamiento)</span>
+  </div>
+  <div class="rolesStats__item">
+    <span class="rolesStats__value">{{ roles|selectattr('is_composite')|list|length }}</span>
+    <span class="rolesStats__label">Roles padre</span>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filterBar" data-filter-scope="roles-table">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Filtrar nombre o descripción del rol...">
+  <select class="filterBar__select" data-filter-field="tipo">
+    <option value="">Todos los tipos</option>
+    <option value="padre">Rol padre</option>
+    <option value="simple">Simple</option>
+  </select>
+  <span class="filterBar__count" id="roles-table-count"></span>
+</div>
+
+<div class="tableWrapper" id="roles-table">
+<table class="rolesTcodeTable">
+  <thead>
+    <tr>
+      <th>Rol</th>
+      <th>Tipo rol</th>
+      <th>Descripción</th>
+      <th>Usuarios vigentes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in roles %}
+    <tr data-filter-item
+        data-f-q="{{ (r.role_name ~ ' ' ~ r.description)|lower }}"
+        data-f-tipo="{{ 'padre' if r.is_composite else 'simple' }}">
+      <td>
+        <a class="rolesTcodeTable__link" href="{{ url_for('rolesdb.rol_detail', role_name=r.role_name) }}">{{ r.role_name }}</a>
+      </td>
+      <td>
+        {% if r.is_composite %}
+        <span class="tcodeTypeBadge tcodeTypeBadge--compuesto">Rol padre</span>
+        {% else %}
+        <span class="tcodeTypeBadge tcodeTypeBadge--clasica">Simple</span>
+        {% endif %}
+      </td>
+      <td class="rolesTcodeTable__desc">{{ r.description or '—' }}</td>
+      <td class="rolesTcodeTable__userCount">{{ r.user_count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% else %}
+<div class="rolesEmpty">
+  <div class="rolesEmpty__icon">🔍</div>
+  <p class="rolesEmpty__text">
+    La transaccion <strong>{{ tcode }}</strong> no existe o no esta asignada a ningun rol.<br>
+    Verificar que AGR_1251 y/o PB_C_CHIPM esten importados,<br>
+    y que el codigo este bien escrito (distingue mayusculas).
+  </p>
+</div>
+{% endif %}{# endif roles #}
+
+{% endif %}{# endif tcode #}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

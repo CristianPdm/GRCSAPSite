@@ -1,0 +1,483 @@
+/* Informe de Auditoria GRC-SOD (templates/sod/informe.html).
+   Documento HTML independiente, pensado para "Imprimir / Guardar PDF" desde
+   el navegador -- equivalente al CSS embebido en expReport() del original,
+   pero como hoja de estilos propia en vez de un <style> inline. No usa la
+   tipografia de Google Fonts del original para no depender de una CDN
+   externa desde un sistema interno/Private Cloud. */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 12px;
+  color: #1a202e;
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.informeToolbar {
+  background: #1a56db;
+  color: #fff;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 11px;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.informeToolbar__title {
+  font-weight: 700;
+  flex: 1;
+}
+
+.informeToolbar__print {
+  background: #fff;
+  color: #1a56db;
+  border: none;
+  border-radius: 5px;
+  padding: 7px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.informeToolbar__word {
+  background: rgba(255, 255, 255, .15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 5px;
+  padding: 7px 14px;
+  font-size: 12px;
+}
+
+.informeToolbar__word:hover {
+  text-decoration: none;
+  background: rgba(255, 255, 255, .25);
+}
+
+.informeToolbar__close {
+  background: rgba(255, 255, 255, .15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 5px;
+  padding: 7px 14px;
+  font-size: 12px;
+}
+
+.informeToolbar__close:hover {
+  text-decoration: none;
+  background: rgba(255, 255, 255, .25);
+}
+
+.informePage {
+  padding: 32px 40px;
+  max-width: 880px;
+  margin: 0 auto;
+  page-break-after: always;
+}
+
+.informePage:last-child {
+  page-break-after: avoid;
+}
+
+.informeCover {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #1a56db 0%, #1447b3 55%, #0f348a 100%);
+  color: #fff;
+  padding: 60px;
+  max-width: 100%;
+}
+
+.informeCover__logo {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 13px;
+  letter-spacing: .2em;
+  opacity: .7;
+  text-transform: uppercase;
+  margin-bottom: 50px;
+}
+
+.informeCover__sub {
+  font-size: 12px;
+  opacity: .6;
+  margin-bottom: 16px;
+}
+
+.informeCover__title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+  opacity: .7;
+  margin-bottom: 10px;
+}
+
+.informeCover__title2 {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 50px;
+}
+
+.informeCover__meta {
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 8px;
+  padding: 20px 24px;
+}
+
+.informeCover__meta table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.informeCover__meta td {
+  padding: 7px 10px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+.informeCover__meta td:first-child {
+  opacity: .65;
+  width: 160px;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.informeCover__meta tr:last-child td {
+  border-bottom: none;
+}
+
+.informeCover__footer {
+  margin-top: auto;
+  padding-top: 32px;
+  font-size: 10px;
+  opacity: .45;
+}
+
+.informePageHeader {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 9px;
+  color: #8896b0;
+  text-align: right;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f3f8;
+}
+
+.informePageFooter {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 9px;
+  color: #8896b0;
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f3f8;
+}
+
+.informeSecHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #1a56db;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.informeSecHeader__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1a56db;
+  color: #fff;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.informeSubhead {
+  margin: 18px 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a202e;
+}
+
+.informeSubhead--alto { color: #c45a00; }
+.informeSubhead--medio { color: #8a6200; }
+
+.informeNote {
+  font-size: 11px;
+  color: #4a5568;
+  margin-bottom: 12px;
+}
+
+.informeKgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.informeKgrid--spaced {
+  margin-top: 12px;
+}
+
+.informeKbox {
+  background: #f8fafc;
+  border: 1px solid #dde3ef;
+  border-radius: 7px;
+  padding: 14px 16px;
+  border-left: 4px solid #dde3ef;
+}
+
+.informeKbox--primary { border-left-color: #1a56db; }
+.informeKbox--critical { border-left-color: #c81f1f; }
+.informeKbox--high { border-left-color: #c45a00; }
+.informeKbox--medium { border-left-color: #8a6200; }
+.informeKbox--adv { border-left-color: #6b21a8; }
+.informeKbox--core { border-left-color: #1e40af; }
+.informeKbox--self { border-left-color: #065f46; }
+
+.informeKbox__value {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: #1a202e;
+}
+
+.informeKbox--primary .informeKbox__value { color: #1a56db; }
+.informeKbox--critical .informeKbox__value { color: #c81f1f; }
+.informeKbox--high .informeKbox__value { color: #c45a00; }
+.informeKbox--medium .informeKbox__value { color: #8a6200; }
+.informeKbox--adv .informeKbox__value { color: #6b21a8; }
+.informeKbox--core .informeKbox__value { color: #1e40af; }
+.informeKbox--self .informeKbox__value { color: #065f46; }
+
+.informeKbox__label {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.informeKbox__sub {
+  font-size: 10px;
+  color: #8896b0;
+  margin-top: 2px;
+}
+
+.informeAlert {
+  border-radius: 7px;
+  padding: 12px 16px;
+  font-size: 12px;
+  border: 1px solid;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.informeAlert--crit { background: #fff0f0; border-color: #f5c2c2; color: #9b1c1c; }
+.informeAlert--high { background: #fff7ed; border-color: #fdd9aa; color: #92400e; }
+.informeAlert--medium { background: #fffbeb; border-color: #fbe68a; color: #8a6200; }
+.informeAlert--ok { background: #f0fdf8; border-color: #a7f0d0; color: #065f46; }
+.informeAlert--info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; margin-bottom: 14px; }
+.informeAlert--spaced { margin-top: 18px; }
+
+.informeTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.informeTable--spaced {
+  margin-top: 18px;
+}
+
+.informeTable th {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 2px solid #dde3ef;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.informeTable td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #f0f3f8;
+  vertical-align: top;
+}
+
+.informeTable tr:last-child td {
+  border-bottom: none;
+}
+
+.informeTable__mono { font-family: "Consolas", "Courier New", monospace; font-size: 10px; }
+.informeTable__strong { font-weight: 700; }
+.informeTable__center { text-align: center; }
+.informeTable__crit { color: #c81f1f; }
+.informeTable__high { color: #c45a00; }
+.informeTable__medium { color: #8a6200; }
+.informeTable__muted { color: #9ca3af; }
+.informeTable__fueDb { font-size: 10px; color: #6b7280; }
+
+.informeTable__total td {
+  background: #f0f3f8;
+  font-weight: 700;
+}
+
+.informeTable__hit td {
+  background: #fff8f0;
+}
+
+.informeChip {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 9px;
+  background: #eff6ff;
+  color: #1e40af;
+  margin: 1px 1px;
+}
+
+.informeChip--user {
+  background: #f0f3f8;
+  color: #4a5568;
+}
+
+.informeConflictCard {
+  border: 1px solid #dde3ef;
+  border-radius: 7px;
+  padding: 13px 16px;
+  margin-bottom: 12px;
+}
+
+.informeConflictCard--crit {
+  border-left: 4px solid #c81f1f;
+  background: #fff9f9;
+}
+
+.informeConflictCard__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.informeConflictCard__id {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #c81f1f;
+}
+
+.informeConflictCard__desc {
+  font-size: 13px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.informeInnerTable {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+
+.informeInnerTable td {
+  padding: 4px 8px;
+  border-bottom: 1px solid #f0f3f8;
+}
+
+.informeInnerTable__label {
+  font-family: monospace;
+  font-size: 10px;
+  color: #6b7280;
+  width: 130px;
+  font-weight: 500;
+}
+
+.informeInnerTable__mono {
+  font-family: monospace;
+  font-size: 10px;
+  color: #4a5568;
+}
+
+.informeInnerTable__count {
+  color: #c81f1f;
+}
+
+.informeInnerTable__excepted {
+  color: #065f46;
+  font-size: 11px;
+}
+
+.informeLevelBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: monospace;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.informeLevelBadge--critico { background: #fff0f0; color: #c81f1f; }
+.informeLevelBadge--alto { background: #fff7ed; color: #c45a00; }
+.informeLevelBadge--medio { background: #fffbeb; color: #8a6200; }
+.informeLevelBadge--sin { background: #f0fdf8; color: #0d7a4e; }
+
+.informeFueBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #6b7280;
+}
+
+.informeFueBadge--adv { color: #6b21a8; }
+.informeFueBadge--core { color: #1e40af; }
+.informeFueBadge--self { color: #065f46; }
+.informeFueBadge--none { color: #6b7280; }
+
+.noPrint { }
+
+@media print {
+  @page {
+    margin: 10mm 15mm;
+    size: A4;
+  }
+
+  .noPrint {
+    display: none !important;
+  }
+}

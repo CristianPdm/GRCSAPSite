@@ -1,0 +1,132 @@
+/* Picker de TCodes con busqueda/autocompletado + chips, usado en
+   templates/sod/rule_form.html (lado A / lado B de una regla SOD).
+   Replica el comportamiento de .tc-picker/.tc-search/.tc-drop de
+   SAP_SOD_Analyzer_v640.html, pero como componente reutilizable. */
+
+.tcPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  padding: 6px 8px 4px;
+  cursor: text;
+}
+
+.tcPicker:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.tcPicker__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tcPicker__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.tcPicker__tagRemove {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: 0.65;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 1px;
+}
+
+.tcPicker__tagRemove:hover {
+  opacity: 1;
+}
+
+.tcPicker__searchWrap {
+  position: relative;
+}
+
+.tcPicker__search {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 2px 2px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.tcPicker__search:focus {
+  outline: none;
+}
+
+.tcPicker__drop {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.tcPicker__dropItem {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.tcPicker__dropTc {
+  font-family: monospace;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tcPicker__dropDesc {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcPicker__dropItem:last-child {
+  border-bottom: none;
+}
+
+.tcPicker__dropItem:hover,
+.tcPicker__dropItem--active {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.tcPicker__dropItem--custom {
+  font-style: italic;
+  color: var(--color-success);
+}
+
+.tcPicker__dropEmpty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}

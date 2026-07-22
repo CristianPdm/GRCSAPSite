@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Matriz Usuario x Rol x TCode{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/matriz.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Cruce completo: cada fila es una transacción habilitada por un rol activo de un usuario.</p>
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD/GRC</a></p>
+
+{% if parent_alerts %}
+<details class="parentRoleAlert">
+  <summary class="parentRoleAlert__summary">
+    ⚠ {{ parent_alerts|length }} rol(es) padre con asignación propia (revisar en SAP)
+  </summary>
+  <p class="parentRoleAlert__hint">
+    Estos roles son compuestos (agrupan a otros roles según AGR_DEFINE) y por diseño no deberían
+    tener tcodes ni usuarios asignados directamente: la autorización real la dan sus roles hijos,
+    que ya aparecen en la matriz. No se muestran aquí como fila propia.
+  </p>
+  {% for a in parent_alerts %}
+  <div class="parentRoleAlert__item">
+    <span class="parentRoleAlert__role">{{ a.rol }}</span>
+    {% if a.desc %}<span class="parentRoleAlert__desc">{{ a.desc }}</span>{% endif %}
+    {% if a.tcodes %}<span class="parentRoleAlert__detail">Tcodes propios: {{ a.tcodes|join(', ') }}</span>{% endif %}
+    {% if a.usuarios %}
+    <span class="parentRoleAlert__detail">
+      {{ a.uc }} usuario(s) asignado(s) directamente al rol padre:
+      <span class="parentRoleAlert__pills">
+        {% for u in a.usuarios %}<span class="parentRoleAlert__pill">{{ u }}</span>{% endfor %}
+      </span>
+    </span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</details>
+{% endif %}
+
+<form class="filterBar" method="GET" data-mx-filter-form data-mx-source="{{ url_for('sod.matriz') }}">
+  <input class="filterBar__input" type="text" name="u" value="{{ f_user }}" placeholder="Filtrar por usuario..." data-mx-field="u">
+  <input class="filterBar__input" type="text" name="r" value="{{ f_rol }}" placeholder="Filtrar por rol..." data-mx-field="r">
+  <input class="filterBar__input" type="text" name="t" value="{{ f_tc }}" placeholder="Filtrar por tcode..." data-mx-field="t">
+  <select class="filterBar__select" name="excl" data-mx-field="excl">
+    <option value="" {{ 'selected' if not excl }}>Vista completa (Usuario + Rol + TCode)</option>
+    <option value="usuario" {{ 'selected' if excl == 'usuario' }}>Sin usuario (Rol + TCode únicos)</option>
+    <option value="rol" {{ 'selected' if excl == 'rol' }}>Sin rol (Usuario + TCode únicos)</option>
+    <option value="tcode" {{ 'selected' if excl == 'tcode' }}>Sin TCode (Usuario + Rol únicos)</option>
+  </select>
+  <button class="mxFilterBar__submit" type="submit">Filtrar</button>
+  {% if f_user or f_rol or f_tc or excl %}
+    <a class="mxFilterBar__clear" href="{{ url_for('sod.matriz') }}">Limpiar filtros</a>
+  {% endif %}
+</form>
+<p class="mxFilterHint">
+  La búsqueda es incremental (se actualiza mientras escribís) y admite wildcards: <code>*</code> reemplaza
+  cualquier texto y <code>?</code> reemplaza un carácter. Ejemplo: <code>Z_FI_*</code> o <code>PA3?</code>.
+  Usuario y Rol buscan por substring sin wildcards. <strong>TCode sin wildcards es exacto</strong>
+  (p. ej. <code>ME21N</code> no trae <code>ME21N_CP</code>; usá <code>ME21N*</code> para traer ambos).
+  El selector de vista permite excluir un solo campo (usuario, rol o tcode): la tabla muestra entonces
+  combinaciones únicas de los otros dos, con la columna "veces" indicando cuántos valores distintos
+  del campo excluido coincidían con esa fila.
+</p>
+
+<p class="backLink"><a href="{{ url_for('sod.matriz_exportar') }}">Exportar matriz completa a CSV</a></p>
+
+{% include "sod/_matriz_rows.html" %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/matrix-filters.js') }}"></script>
+{% endblock %}

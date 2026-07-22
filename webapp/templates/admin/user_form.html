@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar usuario" if user else "Nuevo usuario" }}{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-form.module.css') }}">
+{% endblock %}
+{% block content %}
+<form class="adminForm" method="POST">
+  <label class="adminForm__label" for="username">Usuario</label>
+  <input class="adminForm__input" type="text" id="username" name="username"
+         value="{{ user.username if user else '' }}" {{ "readonly" if user else "" }} required>
+
+  <label class="adminForm__label" for="full_name">Nombre completo</label>
+  <input class="adminForm__input" type="text" id="full_name" name="full_name" value="{{ user.full_name if user else '' }}">
+
+  <label class="adminForm__label" for="email">Email</label>
+  <input class="adminForm__input" type="email" id="email" name="email" value="{{ user.email if user else '' }}">
+
+  <label class="adminForm__label" for="role_id">Rol</label>
+  <select class="adminForm__input" id="role_id" name="role_id" required>
+    {% for r in roles %}
+      <option value="{{ r.id }}" {{ "selected" if user and user.role_id == r.id else "" }}>{{ r.name }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="adminForm__label" for="password">{{ "Nueva contraseña (dejar vacío para no cambiar)" if user else "Contraseña" }}</label>
+  <input class="adminForm__input" type="password" id="password" name="password" {{ "" if user else "required" }}>
+
+  <div class="adminForm__actions">
+    <button class="adminForm__submit" type="submit">Guardar</button>
+    <a class="adminForm__cancel" href="{{ url_for('admin.users') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

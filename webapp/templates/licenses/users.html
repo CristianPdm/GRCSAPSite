@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Usuarios y tipo FUE{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{% endblock %}
+{% block content %}
+<p class="backLink"><a href="{{ url_for('licenses.index') }}">Volver al módulo de Licencias</a></p>
+{% if license_updated %}
+<p class="dataFreshness">Último acceso según FUE_Users.xlsx, actualizado el <strong>{{ (license_updated|local_dt).strftime('%d/%m/%Y %H:%M') }}</strong>.</p>
+{% endif %}
+
+{% if users %}
+<div class="filterBar" data-filter-scope="users-table">
+  <input class="filterBar__input" type="text" data-filter-field="q" placeholder="Buscar usuario o nombre...">
+  <select class="filterBar__select" data-filter-field="fue">
+    <option value="">Todos los tipos FUE</option>
+    {% for code, label in fue_labels.items() %}
+      <option value="{{ code }}">{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select class="filterBar__select" data-filter-field="estado">
+    <option value="">Todos los accesos</option>
+    <option value="inactivo">Inactivos &gt; {{ inactivity_days }} días</option>
+    <option value="activo">Con uso reciente</option>
+  </select>
+  <span class="filterBar__count" id="users-table-count"></span>
+</div>
+{% endif %}
+
+<table class="adminTable" id="users-table">
+  <thead>
+    <tr>
+      <th>Usuario</th>
+      <th>Nombre</th>
+      <th>Tipo FUE</th>
+      <th>Índice FUE</th>
+      <th>Último acceso</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    {% set badge_class = {"ADV": "adv", "CORE": "core", "SELF": "self", "NONE": "none"}[u.fue_type_code] %}
+    {% set is_inactive = u.fue_type_code != "NONE" and u.last_access and (today - u.last_access).days > inactivity_days %}
+    <tr data-filter-item
+        data-f-q="{{ (u.username ~ ' ' ~ (u.full_name or ''))|lower }}"
+        data-f-fue="{{ u.fue_type_code }}"
+        data-f-estado="{{ 'inactivo' if is_inactive else 'activo' }}">
+      <td>
+        {{ u.username }}
+        {% if usr02_imported and u.username not in usr02_usernames %}
+        <span class="licUsr02Warning" data-tooltip="Revisar el usuario dentro de SAP" tabindex="0">⚠</span>
+        {% endif %}
+      </td>
+      <td>{{ u.full_name or "-" }}</td>
+      <td><span class="licTypeBadge licTypeBadge--{{ badge_class }}">{{ fue_labels[u.fue_type_code] }}</span></td>
+      <td>{{ u.indice_fue or "-" }}</td>
+      <td>
+        {{ u.last_access.strftime("%Y-%m-%d") if u.last_access else "Sin registro" }}
+        {% if is_inactive %}<span class="licInactiveFlag">Sin uso &gt; {{ inactivity_days }} días</span>{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No hay usuarios importados todavía.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if users %}
+<p class="filterBar__empty isHidden" id="users-table-empty">Sin usuarios para el filtro seleccionado.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

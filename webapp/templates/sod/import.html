@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Importar datos SAP - SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="folderImportCard">
+  <h2 class="folderImportCard__title">Importar desde carpeta</h2>
+  <p class="folderImportCard__hint">
+    Configurá la carpeta del servidor donde se dejan los Excel exportados de SAP
+    (AGR_USERS.xlsx, AGR_1251.xlsx, AGR_TCODES.xlsx, AGR_DEFINE.xlsx, TSTCT.xlsx,
+    AGR_HIER.xlsx, AGR_BUFFI.xlsx, PB_C_CHIPM.xlsx, USR02.xlsx).
+    Al importar, el sistema busca cada archivo por su nombre y carga automáticamente
+    los que encuentre, sin tener que subirlos de a uno. Es la misma carpeta que usa
+    el módulo de Licencias. PB_C_CHIPM solo se detecta acá si se deja como .xlsx;
+    si tu export viene como .csv, subilo a mano más abajo.
+  </p>
+
+  <form method="POST">
+    <input type="hidden" name="accion" value="guardar_carpeta">
+    <div class="folderImportCard__row">
+      <label class="folderImportCard__field">
+        Carpeta de importación SAP
+        <input class="folderImportCard__input" type="text" name="carpeta"
+               value="{{ carpeta }}" placeholder="Ej: C:\SAP_Exports">
+      </label>
+      <button class="btn btn--secondary" type="submit">Guardar carpeta</button>
+    </div>
+  </form>
+
+  <form method="POST" data-import-form>
+    <input type="hidden" name="accion" value="importar_carpeta">
+    <div class="folderImportCard__actions">
+      <button class="btn btn--primary" type="submit" data-import-submit {{ "disabled" if not carpeta }}>
+        Importar todo desde la carpeta
+      </button>
+    </div>
+    <div class="folderImportCard__progress isHidden" data-import-progress>
+      <div class="folderImportCard__progressBar">
+        <div class="folderImportCard__progressBarFill"></div>
+      </div>
+      <span class="folderImportCard__progressText">Importando archivos desde la carpeta, puede tardar unos segundos…</span>
+    </div>
+  </form>
+
+  {% if scan_resultado %}
+  <ul class="folderImportCard__results">
+    {% for item in scan_resultado %}
+      <li class="folderImportCard__resultItem folderImportCard__resultItem--{{ 'ok' if item.ok else ('error' if item.found else 'missing') }}">
+        <strong>{{ item.tipo }}.xlsx</strong>:
+        {% if item.ok %}{{ item.count }} filas importadas ({{ item.label }})
+        {% elif item.found %}error al importar — {{ item.error }}
+        {% else %}no se encontró en la carpeta
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+<p>Cada carga reemplaza por completo los datos anteriores de esa tabla. También podés subir
+   los 4 archivos a mano, de a uno (AGR_USERS y AGR_1251 son los mínimos necesarios).</p>
+
+<div class="sodImportGrid">
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">AGR_USERS.xlsx</h2>
+    <p class="sodImportCard__count">Asignaciones Rol-Usuario importadas: {{ stats.agr_users }}</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="AGR_USERS">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">AGR_1251.xlsx</h2>
+    <p class="sodImportCard__count">Transacciones por rol (S_TCODE) importadas: {{ stats.agr_1251 }}</p>
+    <p class="sodImportCard__count">Roles con acceso irrestricto a tablas (S_TABU_DIS=*): {{ stats.tabu_dis }}</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="AGR_1251">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">AGR_TCODES.xlsx</h2>
+    <p class="sodImportCard__count">Transacciones por rol (respaldo) importadas: {{ stats.agr_tcodes }}</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="AGR_TCODES">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">AGR_DEFINE.xlsx</h2>
+    <p class="sodImportCard__count">Solo informativo (descripción de roles).</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="AGR_DEFINE">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">TSTCT.xlsx</h2>
+    <p class="sodImportCard__count">Opcional: descripciones de TCode importadas: {{ stats.tstct }}</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="TSTCT">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">AGR_HIER.xlsx</h2>
+    <p class="sodImportCard__count">Catálogos/grupos Fiori asignados a roles: {{ stats.agr_hier }}</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="AGR_HIER">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">AGR_BUFFI.xlsx</h2>
+    <p class="sodImportCard__count">Solo se usa unido a AGR_HIER para resolver apps Fiori (ver abajo).</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="AGR_BUFFI">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">PB_C_CHIPM.xlsx</h2>
+    <p class="sodImportCard__count">Chips Fiori en staging: {{ stats.pb_c_chipm }}</p>
+    <p class="sodImportCard__count">Tcodes vía Fiori sumados a roles: {{ stats.fiori_tcodes }}</p>
+    <p class="sodImportCard__hint" style="font-size:var(--text-xs,0.72rem);color:var(--text-secondary);margin-top:var(--space-1)">
+      Guarda los chips crudos con su component_id para que SUI_TM_MM_APP pueda complementarlo.
+    </p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="PB_C_CHIPM">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx,.csv" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">SUI_TM_MM_APP.xlsx <span style="font-size:0.7rem;font-weight:400;color:var(--text-secondary)">(Recomendado)</span></h2>
+    <p class="sodImportCard__count">Apps Fiori registradas: {{ stats.sui_tm_mm_app }}</p>
+    <p class="sodImportCard__count">Tcodes vía Fiori sumados a roles: {{ stats.fiori_tcodes }}</p>
+    <p class="sodImportCard__hint" style="font-size:var(--text-xs,0.72rem);color:var(--text-secondary);margin-top:var(--space-1)">
+      Más confiable que PB_C_CHIPM para resolución de tcodes: usa campos estructurados en vez de parsing de JSON.
+      Importar después de PB_C_CHIPM para mejor cobertura. SE16 → tabla <strong>SUI_TM_MM_APP</strong>.
+    </p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="SUI_TM_MM_APP">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+
+  <div class="sodImportCard">
+    <h2 class="sodImportCard__title">USR02.xlsx</h2>
+    <p class="sodImportCard__count">Estado de cuenta SAP importado: {{ stats.usr02 }}</p>
+    <p class="sodImportCard__count">Usuarios bloqueados: {{ stats.usr02_bloqueados }}</p>
+    <form class="sodImportCard__form" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="tipo" value="USR02">
+      <input class="sodImportCard__file" type="file" name="archivo" accept=".xlsx" required>
+      <button class="sodImportCard__submit" type="submit">Importar</button>
+    </form>
+  </div>
+</div>
+
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/import-progress.js') }}"></script>
+{% endblock %}

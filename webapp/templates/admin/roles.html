@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Roles{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="adminHeader">
+  <a class="adminHeader__action" href="{{ url_for('admin.role_new') }}">+ Nuevo rol</a>
+</div>
+
+<table class="adminTable">
+  <thead>
+    <tr>
+      <th>Rol</th>
+      <th>Descripción</th>
+      <th>Permisos</th>
+      <th>Usuarios</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in roles %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td>{{ r.description or "-" }}</td>
+      <td>
+        {% for label in r.permission_labels() %}
+          <span class="adminTable__badge adminTable__badge--on">{{ label }}</span>
+        {% else %}
+          <span class="adminTable__badge adminTable__badge--off">Sin permisos</span>
+        {% endfor %}
+      </td>
+      <td>{{ r.users|length }}</td>
+      <td class="adminTable__actions">
+        <a href="{{ url_for('admin.role_edit', role_id=r.id) }}">Editar</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

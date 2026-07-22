@@ -1,0 +1,16 @@
+/* Estilos exclusivos de las paginas placeholder de SOD/Licencias
+   (templates/sod/index.html, templates/licenses/index.html) */
+
+.modulePlaceholder__notice {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  font-size: 14px;
+  max-width: 640px;
+}
+
+.modulePlaceholder__list {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}

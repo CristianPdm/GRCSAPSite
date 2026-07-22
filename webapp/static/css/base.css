@@ -1,0 +1,527 @@
+/* ============================================================
+   base.css - Estilos globales reutilizables en todo el sitio.
+   Sistema de diseno "enterprise GRC": navy + grises frios + acentos
+   de severidad, inspirado en consolas tipo SAP GRC Access Control /
+   ServiceNow / SailPoint (sidebar lateral oscura + contenido claro).
+   No incluir aqui estilos especificos de un componente: esos van
+   en static/css/components/<componente>.module.css
+   ============================================================ */
+
+:root {
+  /* --- Marca / acento principal (botones, links, foco) --- */
+  --color-primary: #15509c;
+  --color-primary-dark: #0d3a78;
+  --color-primary-light: #e8f1fb;
+  --color-accent: #0c8599;
+  --color-accent-light: #e3f6f8;
+
+  /* --- Superficies y fondo --- */
+  --color-bg: #eef1f5;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f8fa;
+  --color-border: #dde3ea;
+  --color-border-strong: #c4ccd6;
+
+  /* --- Texto --- */
+  --color-text: #1a2433;
+  --color-text-muted: #5b6776;
+  --color-text-faint: #8893a1;
+
+  /* --- Severidad / estado (mismos nombres que antes, valores afinados) --- */
+  --color-success: #157a4d;
+  --color-success-bg: #e5f5ec;
+  --color-error: #b8222f;
+  --color-error-bg: #fbe9ea;
+  --color-warning: #a85a06;
+  --color-warning-bg: #fcefdd;
+  --color-info: #1d5fad;
+  --color-info-bg: #e6f0fb;
+
+  /* --- Shell: sidebar lateral oscura + topbar clara --- */
+  --color-sidebar-bg: #0c1b32;
+  --color-sidebar-bg-raised: #142a48;
+  --color-sidebar-bg-active: #1c3a60;
+  --color-sidebar-text: #aebcd2;
+  --color-sidebar-text-muted: #7488a6;
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+  --color-sidebar-accent: #4d9fff;
+
+  --color-topbar-bg: #ffffff;
+  --color-topbar-border: var(--color-border);
+
+  /* --- Geometria --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 8px rgba(15, 23, 42, 0.06);
+  --shadow-popover: 0 8px 24px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+  --shadow-sidebar: 2px 0 12px rgba(8, 14, 28, 0.18);
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+
+  --font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: "Consolas", "Courier New", monospace;
+
+  --sidebar-width: 252px;
+  --topbar-height: 60px;
+  --transition-fast: 150ms ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1, h2, h3 {
+  color: var(--color-text);
+  margin-top: 0;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+h3 {
+  font-size: 15px;
+}
+
+p {
+  color: var(--color-text);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-sidebar-accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Shell de la aplicacion: sidebar lateral fija + topbar + main.
+   El toggle movil se resuelve sin JS con un checkbox oculto.
+   ============================================================ */
+.appShell {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+.appShell__navToggle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.appShell__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.appShell__main {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+@media (max-width: 880px) {
+  .appShell__main {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Mantiene compatibilidad con cualquier referencia residual a .pageContainer */
+.pageContainer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+/* ============================================================
+   Encabezado de pantalla reutilizable (titulo + descripcion +
+   acciones), para usar como envoltorio opcional en templates.
+   ============================================================ */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-lg);
+}
+
+.pageHeader__title {
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+.pageHeader__subtitle {
+  color: var(--color-text-muted);
+  font-size: 13.5px;
+  margin: 0;
+  max-width: 640px;
+}
+
+.pageHeader__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Botones globales (acciones primarias/secundarias). Reemplaza
+   los "submit" sueltos definidos por modulo cuando aplica.
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn:hover {
+  text-decoration: none;
+}
+
+.btn--primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.btn--secondary {
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.btn--secondary:hover {
+  background-color: var(--color-surface-muted);
+}
+
+.btn--danger {
+  background-color: var(--color-surface);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.btn--danger:hover {
+  background-color: var(--color-error-bg);
+}
+
+.btn--sm {
+  padding: 5px 11px;
+  font-size: 12.5px;
+}
+
+/* ============================================================
+   Mensajes flash (exito / error / info / advertencia)
+   ============================================================ */
+.flashList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.flashMessage {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  border: 1px solid transparent;
+}
+
+.flashMessage--success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: rgba(21, 122, 77, 0.18);
+}
+
+.flashMessage--error {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: rgba(184, 34, 47, 0.18);
+}
+
+.flashMessage--warning {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-color: rgba(168, 90, 6, 0.18);
+}
+
+.flashMessage--info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border-color: rgba(29, 95, 173, 0.18);
+}
+
+.errorPage {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+/* Enlace de "volver" usado en pantallas secundarias de cualquier modulo
+   (SOD, Licencias, etc.) -- estilo tipo breadcrumb, sin inline styles. */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  font-size: 13px;
+}
+
+.backLink a {
+  color: var(--color-text-muted);
+}
+
+.backLink a::before {
+  content: "‹ ";
+}
+
+.backLink a:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* Aviso reutilizable: fecha de la ultima importacion de la tabla SAP que
+   alimenta el "ultimo acceso"/"ultimo login" mostrado en una pantalla (ver
+   app.utils.sap_import.last_import_date). No es un warning de riesgo,
+   solo contexto para no confundir una tabla desactualizada con
+   inactividad real del usuario -- por eso usa un tono neutro, no el color
+   de warning/error. */
+/* Parrafo introductorio de modulo -- descripcion breve debajo del titulo */
+.pageIntro {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.6;
+}
+
+.dataFreshness {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-md);
+}
+
+.dataFreshness strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* Utilitaria global: oculta filas/items descartados por un filtro de
+   busqueda en cliente (ver static/js/table-filters.js). Se usa en lugar
+   de manipular style="display:none" desde las plantillas. */
+.isHidden {
+  display: none !important;
+}
+
+/* ============================================================
+   Tarjeta de "importar desde carpeta": va en base.css (y no en un
+   .module.css) porque es exactamente el mismo componente reutilizado en
+   las pantallas de importacion de SOD y de Licencias (carpeta de
+   importacion SAP compartida entre ambos modulos).
+   ============================================================ */
+.folderImportCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.folderImportCard__title {
+  margin-bottom: 4px;
+}
+
+.folderImportCard__hint {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  max-width: 720px;
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+}
+
+.folderImportCard__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.folderImportCard__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 240px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.folderImportCard__input {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 13.5px;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  font-weight: 400;
+}
+
+.folderImportCard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.folderImportCard__results {
+  list-style: none;
+  margin: var(--spacing-md) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Indicador de avance mostrado al enviar el formulario de importacion por
+   carpeta (ver static/js/import-progress.js). Barra indeterminada: no hay
+   progreso real archivo-por-archivo porque la importacion es sincronica
+   en el servidor, pero da feedback de que el pedido se esta procesando. */
+.folderImportCard__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.folderImportCard__progressBar {
+  position: relative;
+  width: 160px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.folderImportCard__progressBarFill {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-primary);
+  animation: folderImportProgressSlide 1.1s ease-in-out infinite;
+}
+
+@keyframes folderImportProgressSlide {
+  0% {
+    left: -40%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.folderImportCard__progressText {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.folderImportCard__resultItem {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.folderImportCard__resultItem--ok {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: rgba(21, 122, 77, 0.18);
+}
+
+.folderImportCard__resultItem--error {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: rgba(184, 34, 47, 0.18);
+}
+
+.folderImportCard__resultItem--missing {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}

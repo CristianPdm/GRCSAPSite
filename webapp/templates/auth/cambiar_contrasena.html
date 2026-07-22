@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Cambiar contraseña{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-form.module.css') }}">
+{% endblock %}
+{% block content %}
+<form class="adminForm" method="POST" autocomplete="off">
+  <h2 class="adminForm__title">Cambiar contraseña</h2>
+
+  <label class="adminForm__label" for="actual">Contraseña actual</label>
+  <input class="adminForm__input" type="password" id="actual" name="actual"
+         autocomplete="current-password" required autofocus>
+
+  <label class="adminForm__label" for="nueva">Nueva contraseña</label>
+  <input class="adminForm__input" type="password" id="nueva" name="nueva"
+         autocomplete="new-password" minlength="6" required>
+
+  <label class="adminForm__label" for="confirmar">Confirmar nueva contraseña</label>
+  <input class="adminForm__input" type="password" id="confirmar" name="confirmar"
+         autocomplete="new-password" minlength="6" required>
+
+  <div class="adminForm__actions">
+    <button class="adminForm__submit" type="submit">Guardar contraseña</button>
+    <a class="adminForm__cancel" href="{{ url_for('main.dashboard') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Matriz de reglas SOD{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{% endblock %}
+{% block content %}
+<div class="adminHeader">
+  <a class="adminHeader__action" href="{{ url_for('sod.regla_nueva') }}">+ Nueva regla</a>
+</div>
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+
+<div class="sodActions">
+  <a class="sodActions__link" href="{{ url_for('sod.reglas_exportar_json') }}">Exportar JSON</a>
+  <a class="sodActions__link" href="{{ url_for('sod.reglas_exportar_excel') }}" title="Exportar a Excel para Auditoría Interna">Exportar Excel</a>
+  <a class="sodActions__link" href="{{ url_for('sod.reglas_importar') }}">Importar matriz</a>
+  <a class="sodActions__link" href="{{ url_for('sod.reglas_log') }}">Log de cambios</a>
+  <a class="sodActions__link sodActions__link--danger" href="{{ url_for('sod.reglas_restablecer') }}">Restablecer matriz</a>
+</div>
+
+{% if rules %}
+<div class="filterBar" data-filter-scope="rules-table">
+  <input class="filterBar__input" type="text" data-filter-field="q" placeholder="Buscar ID, módulo o descripción...">
+  <select class="filterBar__select" data-filter-field="modulo">
+    <option value="">Todos los módulos</option>
+    {% for modulo in modulos %}
+      <option value="{{ modulo }}">{{ modulo }}</option>
+    {% endfor %}
+  </select>
+  <select class="filterBar__select" data-filter-field="nivel">
+    <option value="">Todos los niveles</option>
+    <option value="CRITICO">Crítico</option>
+    <option value="ALTO">Alto</option>
+    <option value="MEDIO">Medio</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="estado">
+    <option value="">Todos los estados</option>
+    <option value="activa">Activa</option>
+    <option value="inactiva">Inactiva</option>
+  </select>
+  <span class="filterBar__count" id="rules-table-count"></span>
+</div>
+{% endif %}
+
+<table class="adminTable" id="rules-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Módulo</th>
+      <th>Nivel</th>
+      <th>Descripción</th>
+      <th>Origen</th>
+      <th>Estado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rule in rules %}
+    <tr data-filter-item
+        data-f-q="{{ (rule.id ~ ' ' ~ rule.modulo ~ ' ' ~ rule.descripcion)|lower }}"
+        data-f-modulo="{{ rule.modulo }}"
+        data-f-nivel="{{ rule.nivel }}"
+        data-f-estado="{{ 'activa' if rule.activo else 'inactiva' }}">
+      <td>{{ rule.id }}</td>
+      <td>{{ rule.modulo }}</td>
+      <td><span class="sodLevelBadge sodLevelBadge--{{ rule.nivel|lower }}">{{ rule.nivel }}</span></td>
+      <td>{{ rule.descripcion }}</td>
+      <td>{{ rule.origen }}</td>
+      <td>
+        <span class="adminTable__badge adminTable__badge--{{ 'on' if rule.activo else 'off' }}">
+          {{ "Activa" if rule.activo else "Inactiva" }}
+        </span>
+      </td>
+      <td class="adminTable__actions">
+        <a href="{{ url_for('sod.regla_editar', rule_id=rule.id) }}">Editar</a>
+        <form class="adminTable__inlineForm" method="POST" action="{{ url_for('sod.regla_toggle', rule_id=rule.id) }}">
+          <button type="submit" class="adminTable__linkButton">
+            {{ "Desactivar" if rule.activo else "Activar" }}
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No hay reglas configuradas.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if rules %}
+<p class="filterBar__empty isHidden" id="rules-table-empty">Sin reglas para el filtro seleccionado.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Auditoría{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Últimos 200 eventos registrados (inicios de sesión, altas/bajas de usuarios, cambios de rol).</p>
+
+<table class="adminTable">
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Usuario</th>
+      <th>Acción</th>
+      <th>Detalle</th>
+      <th>IP</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td>{{ e.timestamp.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+      <td>{{ e.username or "-" }}</td>
+      <td>{{ e.action }}</td>
+      <td>{{ e.details or "-" }}</td>
+      <td>{{ e.ip_address or "-" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

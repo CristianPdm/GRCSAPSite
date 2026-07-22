@@ -1,0 +1,457 @@
+/* Estilos exclusivos del modulo SOD/GRC
+   (templates/sod/index.html, import.html, results.html, rules.html,
+   rule_form.html, exceptions.html) */
+
+.sodSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sodChartCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sodChartCard__title {
+  font-size: 15px;
+  margin: 0 0 var(--spacing-md);
+  color: var(--color-text);
+}
+
+.sodChart {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl, 32px);
+  flex-wrap: wrap;
+}
+
+.sodChart__svg {
+  flex-shrink: 0;
+}
+
+.sodChart__rotate {
+  transform: rotate(-90deg);
+  transform-origin: 60px 60px;
+}
+
+.sodChart__track {
+  fill: none;
+  stroke: var(--color-bg);
+  stroke-width: 14;
+}
+
+.sodChart__seg {
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: butt;
+  transition: stroke-dasharray var(--transition-fast);
+}
+
+.sodChart__seg--critical { stroke: var(--color-error); }
+.sodChart__seg--high { stroke: var(--color-warning); }
+.sodChart__seg--medium { stroke: var(--color-info); }
+
+.sodChart__centerValue {
+  font-size: 22px;
+  font-weight: 700;
+  fill: var(--color-text);
+  font-family: inherit;
+}
+
+.sodChart__centerLabel {
+  font-size: 9px;
+  fill: var(--color-text-muted);
+  font-family: inherit;
+  text-transform: uppercase;
+}
+
+.sodChart__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sodChart__legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 13.5px;
+  color: var(--color-text);
+}
+
+.sodChart__legendItem strong {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.sodChart__legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.sodChart__legendDot--critical { background-color: var(--color-error); }
+.sodChart__legendDot--high { background-color: var(--color-warning); }
+.sodChart__legendDot--medium { background-color: var(--color-info); }
+.sodChart__legendDot--neutral { background-color: var(--color-text-muted); }
+
+.sodSummary__card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.sodSummary__value {
+  font-size: 28px;
+  font-weight: 700;
+  display: block;
+}
+
+.sodSummary__value--critical { color: var(--color-error); }
+.sodSummary__value--high { color: var(--color-warning); }
+.sodSummary__value--medium { color: var(--color-info); }
+.sodSummary__value--neutral { color: var(--color-text); }
+
+.sodSummary__label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.sodChartGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sodBarChart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sodBarChart__row {
+  display: grid;
+  grid-template-columns: 110px 1fr 34px;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sodBarChart__label {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sodBarChart__svg {
+  width: 100%;
+  height: 18px;
+  display: block;
+}
+
+.sodBarChart__track {
+  fill: var(--color-bg);
+}
+
+.sodBarChart__fill {
+  fill: var(--color-primary);
+  transition: width var(--transition-fast);
+}
+
+.sodBarChart__fill--critical { fill: var(--color-error); }
+.sodBarChart__fill--high { fill: var(--color-warning); }
+.sodBarChart__fill--medium { fill: var(--color-info); }
+
+.sodBarChart__value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: right;
+}
+
+.sodActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.sodActions__link {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.sodActions__link:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  text-decoration: none;
+}
+
+.sodActions__link--danger {
+  color: var(--color-error);
+  border-color: var(--color-error-bg);
+}
+
+.sodLevelBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.sodLevelBadge--critico {
+  background-color: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.sodLevelBadge--alto {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.sodLevelBadge--medio {
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.sodLevelBadge--sin {
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.sodRuleGroup {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.sodRuleGroup__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.sodRuleGroup__desc {
+  margin: var(--spacing-xs) 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.sodRuleGroup__users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.sodRuleGroup__userChip {
+  font-size: 12px;
+  background-color: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
+
+.sodRuleGroup__empty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.sodImportGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.sodImportCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+}
+
+.sodImportCard__title {
+  font-size: 15px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.sodImportCard__count {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+}
+
+.sodImportCard__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.sodImportCard__file {
+  font-size: 13px;
+}
+
+.sodImportCard__submit {
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: 13px;
+  align-self: flex-start;
+}
+
+.sodImportCard__submit:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.sodExceptionForm {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  align-items: flex-end;
+}
+
+.sodExceptionForm__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.sodExceptionForm__input {
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.sodExceptionForm__submit {
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 14px;
+}
+
+.sodExceptionForm__submit:hover {
+  background-color: var(--color-primary-dark);
+}
+
+/* Warning colapsable para roles padre/compuestos con asignacion propia
+   anomala (ver engine.get_parent_role_alerts). Se usa solo en Matriz
+   (Usuario x Rol x TCode): esa pantalla excluye al rol padre de la
+   matriz, y este <details> explica por que / avisa si hay algo para
+   revisar en SAP, sin estorbar la barra de filtros (cerrado por
+   defecto, se abre con un click en el resumen). */
+.parentRoleAlert {
+  background-color: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.parentRoleAlert__summary {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-warning);
+  cursor: pointer;
+  list-style: none;
+  padding: var(--spacing-xs) 0;
+}
+
+.parentRoleAlert__summary::-webkit-details-marker {
+  display: none;
+}
+
+.parentRoleAlert[open] .parentRoleAlert__summary {
+  margin-bottom: var(--spacing-xs);
+}
+
+.parentRoleAlert__hint {
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.parentRoleAlert__item {
+  font-size: 13px;
+  padding: var(--spacing-sm) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.parentRoleAlert__item:first-of-type {
+  border-top: none;
+}
+
+.parentRoleAlert__role {
+  font-weight: 700;
+  font-family: monospace;
+}
+
+.parentRoleAlert__desc {
+  color: var(--color-text-muted);
+  margin-left: var(--spacing-xs);
+}
+
+.parentRoleAlert__detail {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+.parentRoleAlert__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: 4px;
+}
+
+.parentRoleAlert__pill {
+  font-size: 11px;
+  font-family: monospace;
+  background-color: var(--color-info-bg);
+  color: var(--color-info);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}

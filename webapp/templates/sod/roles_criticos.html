@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Roles críticos{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/roles_criticos.module.css') }}">
+{% endblock %}
+{% block content %}
+<p>Roles que habilitan conflictos SOD activos o tienen acceso irrestricto a tablas (S_TABU_DIS=*).</p>
+<p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
+
+{% if rows %}
+<div class="filterBar" data-filter-scope="role-crit-list">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Buscar rol o descripción...">
+  <select class="filterBar__select" data-filter-field="nivel">
+    <option value="">Todos los niveles SOD</option>
+    <option value="CRITICO">Crítico</option>
+    <option value="ALTO">Alto</option>
+    <option value="MEDIO">Medio</option>
+    <option value="SIN">Sin conflictos</option>
+  </select>
+  <select class="filterBar__select" data-filter-field="tabu">
+    <option value="">Tablas: todos</option>
+    <option value="si">Solo S_TABU_DIS=*</option>
+  </select>
+  <span class="filterBar__count" id="role-crit-list-count"></span>
+</div>
+{% endif %}
+
+<div id="role-crit-list">
+{% for row in rows %}
+  <div class="roleCritRow" data-filter-item
+       data-f-q="{{ (row.rol ~ ' ' ~ row.desc)|lower }}"
+       data-f-nivel="{{ row.mx }}"
+       data-f-tabu="{{ 'si' if row.tabu_dis else 'no' }}">
+    <details>
+      <summary class="roleCritRow__summary">
+        <span class="roleCritRow__name">{{ row.rol }}</span>
+        {% if row.desc %}<span class="roleCritRow__desc">{{ row.desc }}</span>{% endif %}
+        <span class="sodLevelBadge sodLevelBadge--{{ row.mx|lower }}">{{ row.mx }}</span>
+        {% if row.tabu_dis %}<span class="roleCritRow__tabuFlag">S_TABU_DIS=*</span>{% endif %}
+        {% if row.fue_label %}<span class="roleCritRow__stat">{{ row.fue_label }}</span>{% endif %}
+        <span class="roleCritRow__stat">{{ row.uc }} usuario(s)</span>
+        <span class="roleCritRow__stat">{{ row.tcs_total }} tcode(s)</span>
+      </summary>
+      <div class="roleCritRow__detail">
+        {% if row.desc %}
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">Descripción</span><span>{{ row.desc }}</span>
+        </div>
+        {% endif %}
+        {% if row.fue_label %}
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">FUE de referencia</span>
+          <span>{{ row.fue_label }}{% if row.fue_ratio %} &middot; ratio {{ row.fue_ratio }}{% endif %}</span>
+        </div>
+        {% endif %}
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">Conflictos / banderas</span>
+          <span class="roleCritRow__pills">
+            {% for rid in row.ids %}<span class="roleCritRow__pill">{{ rid }}</span>{% else %}<span class="roleCritEmpty">Sin conflictos</span>{% endfor %}
+          </span>
+        </div>
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">TCodes ({{ row.tcs_total }})</span>
+          <span class="roleCritRow__pills">
+            {% for tc in row.tcs %}<span class="roleCritRow__pill">{{ tc }}</span>{% else %}<span class="roleCritEmpty">Sin tcodes</span>{% endfor %}
+            {% if row.tcs_total > row.tcs|length %}<span class="roleCritEmpty">... y {{ row.tcs_total - row.tcs|length }} más</span>{% endif %}
+          </span>
+        </div>
+        <div class="roleCritRow__detailLine">
+          <span class="roleCritRow__detailLabel">Usuarios asignados ({{ row.uc }})</span>
+          <span class="roleCritRow__pills">
+            {% for u in row.users[:30] %}<span class="roleCritRow__pill roleCritRow__pill--user">{{ u }}</span>{% else %}<span class="roleCritEmpty">Sin usuarios activos</span>{% endfor %}
+            {% if row.uc > 30 %}<span class="roleCritEmpty">... y {{ row.uc - 30 }} más</span>{% endif %}
+          </span>
+        </div>
+      </div>
+    </details>
+  </div>
+{% else %}
+  <p class="roleCritEmpty">No hay roles para mostrar. Importa AGR_USERS / AGR_1251 para ver esta vista.</p>
+{% endfor %}
+</div>
+{% if rows %}
+<p class="filterBar__empty isHidden" id="role-crit-list-empty">Sin roles para el filtro seleccionado.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}
