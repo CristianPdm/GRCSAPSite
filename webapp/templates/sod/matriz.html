@@ -9,33 +9,9 @@
 <p>Cruce completo: cada fila es una transacción habilitada por un rol activo de un usuario.</p>
 <p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD/GRC</a></p>
 
-{% if parent_alerts %}
-<details class="parentRoleAlert">
-  <summary class="parentRoleAlert__summary">
-    ⚠ {{ parent_alerts|length }} rol(es) padre con asignación propia (revisar en SAP)
-  </summary>
-  <p class="parentRoleAlert__hint">
-    Estos roles son compuestos (agrupan a otros roles según AGR_DEFINE) y por diseño no deberían
-    tener tcodes ni usuarios asignados directamente: la autorización real la dan sus roles hijos,
-    que ya aparecen en la matriz. No se muestran aquí como fila propia.
-  </p>
-  {% for a in parent_alerts %}
-  <div class="parentRoleAlert__item">
-    <span class="parentRoleAlert__role">{{ a.rol }}</span>
-    {% if a.desc %}<span class="parentRoleAlert__desc">{{ a.desc }}</span>{% endif %}
-    {% if a.tcodes %}<span class="parentRoleAlert__detail">Tcodes propios: {{ a.tcodes|join(', ') }}</span>{% endif %}
-    {% if a.usuarios %}
-    <span class="parentRoleAlert__detail">
-      {{ a.uc }} usuario(s) asignado(s) directamente al rol padre:
-      <span class="parentRoleAlert__pills">
-        {% for u in a.usuarios %}<span class="parentRoleAlert__pill">{{ u }}</span>{% endfor %}
-      </span>
-    </span>
-    {% endif %}
-  </div>
-  {% endfor %}
-</details>
-{% endif %}
+{# QA: el banner aparte de "roles padre con asignacion propia" se quito;
+   ahora esas filas aparecen integradas en la tabla, marcadas con un icono
+   de advertencia junto al nombre del rol (ver _matriz_rows.html) #}
 
 <form class="filterBar" method="GET" data-mx-filter-form data-mx-source="{{ url_for('sod.matriz') }}">
   <input class="filterBar__input" type="text" name="u" value="{{ f_user }}" placeholder="Filtrar por usuario..." data-mx-field="u">

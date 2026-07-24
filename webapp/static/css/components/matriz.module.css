@@ -45,6 +45,31 @@
   opacity: .55;
 }
 
+/* Estado de carga: reemplaza la tabla mientras llega la respuesta */
+.mxLoading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-md);
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.mxLoading__spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: mxSpin .7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes mxSpin {
+  to { transform: rotate(360deg); }
+}
+
 .mxTable {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -79,6 +104,49 @@
 .mxTable__rol {
   color: var(--color-text-muted);
   font-family: monospace;
+}
+
+/* QA: icono de advertencia inline junto al rol -- reemplaza al banner
+   aparte de "roles padre con asignacion propia". Tooltip nativo via
+   atributo data-tooltip + ::after, mismo patron que licUsr02Warning en
+   licenses.module.css. */
+.mxTable__warnIcon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--color-warning);
+  cursor: help;
+}
+
+.mxTable__warnIcon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-text);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: normal;
+  width: 260px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.mxTable__warnIcon:hover::after,
+.mxTable__warnIcon:focus::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .mxTable__tc {

@@ -22,7 +22,31 @@
 (function () {
   "use strict";
 
-  var DEBOUNCE_MS = 350;
+  var DEBOUNCE_MS = 400;
+  // Minimo de caracteres para disparar busqueda incremental (no en submit)
+  var MIN_CHARS = 2;
+
+  // ── Plantillas de estado ──────────────────────────────────────────────────
+
+  function loadingHTML() {
+    return '<div id="mx-results" class="mxLoading" aria-live="polite" aria-busy="true">' +
+      '<span class="mxLoading__spinner" aria-hidden="true"></span>' +
+      '<span class="mxLoading__text">Procesando…</span>' +
+      '</div>';
+  }
+
+  function hintHTML() {
+    return '<div id="mx-results"><p class="mxEmpty">' +
+      'Ingresá al menos ' + MIN_CHARS + ' caracteres en un campo para buscar.' +
+      '</p></div>';
+  }
+
+  function replaceResults(html) {
+    var el = document.getElementById("mx-results");
+    if (el) el.outerHTML = html;
+  }
+
+  // ── Logica principal ──────────────────────────────────────────────────────
 
   function initForm(form) {
     var source = form.getAttribute("data-mx-source") || form.action;
@@ -40,12 +64,14 @@
       return query ? source + "?" + query : source;
     }
 
-    function refresh(options) {
-      var isSubmit = !!(options && options.isSubmit);
-      var url = buildUrl();
-      var resultsEl = document.getElementById("mx-results");
-      if (resultsEl) resultsEl.classList.add("mxResults--loading");
+    function hasEnoughInput(minChars) {
+      return fields.some(function (f) {
+        return (f.value || "").trim().length >= minChars;
+      });
+    }
 
+    function doFetch(url, isSubmit) {
+      // Cancelar fetch anterior
       if (activeFetch) activeFetch.cancelled = true;
       var thisFetch = { cancelled: false };
       activeFetch = thisFetch;
@@ -57,39 +83,48 @@
         })
         .then(function (html) {
           if (thisFetch.cancelled) return;
-          var current = document.getElementById("mx-results");
-          if (current) current.outerHTML = html.trim();
+          replaceResults(html.trim());
           window.history.replaceState(null, "", url);
         })
         .catch(function (err) {
           if (thisFetch.cancelled) return;
-          // No fallar en silencio: se ve en la consola para poder diagnosticar,
-          // y si el usuario filtro explicitamente (boton/Enter) se recurre a
-          // una recarga de pagina completa con el mismo filtro -- el
-          // comportamiento de siempre, sin JS, que sirve de respaldo si la
-          // busqueda incremental por algun motivo falla (red, sesion, error
-          // de servidor).
           console.error("matrix-filters: fallo la busqueda incremental", err);
           if (isSubmit) window.location.href = url;
-        })
-        .finally(function () {
-          var el = document.getElementById("mx-results");
-          if (el) el.classList.remove("mxResults--loading");
+          else {
+            var el = document.getElementById("mx-results");
+            if (el) el.classList.remove("mxLoading");
+          }
         });
     }
 
+    function refresh(options) {
+      var isSubmit = !!(options && options.isSubmit);
+
+      // Busqueda incremental: esperar minimo de caracteres
+      if (!isSubmit && !hasEnoughInput(MIN_CHARS)) {
+        replaceResults(hintHTML());
+        return;
+      }
+
+      // Limpiar inmediatamente y mostrar spinner antes del viaje al servidor
+      replaceResults(loadingHTML());
+
+      doFetch(buildUrl(), isSubmit);
+    }
+
+    // QA 3.a: busqueda incremental solo en inputs de texto (no en <select>).
+    // Los selects solo tienen efecto al presionar "Filtrar".
     fields.forEach(function (field) {
-      // "input" cubre los campos de texto; "change" se agrega para el
-      // <select> de exclusion de dimension (Sin usuario/rol/tcode), que en
-      // algunos navegadores no dispara "input" al elegir una opcion.
-      var trigger = function () {
-        if (timer) window.clearTimeout(timer);
-        timer = window.setTimeout(refresh, DEBOUNCE_MS);
-      };
-      field.addEventListener("input", trigger);
-      field.addEventListener("change", trigger);
+      if (field.tagName.toLowerCase() === "input") {
+        var trigger = function () {
+          if (timer) window.clearTimeout(timer);
+          timer = window.setTimeout(refresh, DEBOUNCE_MS);
+        };
+        field.addEventListener("input", trigger);
+      }
     });
 
+    // Boton "Filtrar" / Enter: sin debounce, limpia y busca de inmediato
     form.addEventListener("submit", function (event) {
       event.preventDefault();
       if (timer) window.clearTimeout(timer);

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Analisis de Roles y Transacciones{% endblock %}
+{% block title %}Análisis de Roles y Transacciones{% endblock %}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/rolesdb.module.css') }}">
 {% endblock %}
 {% block content %}
 
 <p class="pageIntro">
-  Explora las transacciones y apps Fiori de un rol, o en que roles aparece una transaccion.
-  El sistema identifica automaticamente si es una <strong>App Fiori</strong> o una <strong>Transaccion Clasica</strong>.
+  Explorá las transacciones y apps Fiori de un rol, o en qué roles aparece una transacción.
+  El sistema identifica automáticamente si es una <strong>App Fiori</strong> o una <strong>Transacción Clásica</strong>.
+  Solo se pueden consultar roles hijos (no compuestos) que empiecen con <strong>Z</strong>.
 </p>
 
 <div class="rolesSearch">
@@ -36,13 +37,13 @@
     </form>
   </div>
 
-  <!-- Buscar por Transaccion -->
+  <!-- Buscar por Transacción -->
   <div class="rolesSearchCard">
     <div class="rolesSearchCard__icon">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>
     </div>
-    <p class="rolesSearchCard__title">Buscar por Transaccion / App</p>
-    <p class="rolesSearchCard__hint">Ver todos los roles que contienen una transaccion o app Fiori especifica.</p>
+    <p class="rolesSearchCard__title">Buscar por Transacción / App</p>
+    <p class="rolesSearchCard__hint">Ver todos los roles que contienen una transacción o app Fiori específica.</p>
     <form action="{{ url_for('rolesdb.tcode_search') }}" method="get" id="form-tcode">
       <div class="rolesSearchCard__form">
         <div class="rolesSearchCard__inputWrap">
@@ -52,7 +53,7 @@
           <input class="rolesSearchCard__input" type="text" id="input-tcode"
                  name="q" autocomplete="off"
                  placeholder="Ej: ME51N, VF01, F-02"
-                 aria-label="Codigo de transaccion SAP">
+                 aria-label="Código de transacción SAP">
           <div class="rolesAutocomplete" id="ac-tcode" style="display:none"></div>
         </div>
         <button class="rolesSearchCard__btn" type="submit">Buscar</button>

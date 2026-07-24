@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Matriz de reglas SOD{% endblock %}
+{% block title %}Matriz SOD{% endblock %}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/sod.module.css') }}">
@@ -12,11 +12,12 @@
 <p class="backLink"><a href="{{ url_for('sod.index') }}">Volver al módulo SOD</a></p>
 
 <div class="sodActions">
-  <a class="sodActions__link" href="{{ url_for('sod.reglas_exportar_json') }}">Exportar JSON</a>
+  {# QA 4.b: Exportar JSON eliminado (no debe exponerse en producción) #}
   <a class="sodActions__link" href="{{ url_for('sod.reglas_exportar_excel') }}" title="Exportar a Excel para Auditoría Interna">Exportar Excel</a>
-  <a class="sodActions__link" href="{{ url_for('sod.reglas_importar') }}">Importar matriz</a>
+  {# Restaurado: importar reglas via Excel (mismo formato que "Exportar Excel") #}
+  <a class="sodActions__link" href="{{ url_for('sod.reglas_importar') }}" title="Subir Excel con el mismo formato de Exportar Excel para reemplazar la matriz">Importar Excel</a>
   <a class="sodActions__link" href="{{ url_for('sod.reglas_log') }}">Log de cambios</a>
-  <a class="sodActions__link sodActions__link--danger" href="{{ url_for('sod.reglas_restablecer') }}">Restablecer matriz</a>
+  {# QA 4.a: Restablecer matriz eliminado (acción destructiva no debe exponerse) #}
 </div>
 
 {% if rules %}

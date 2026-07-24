@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Roles y tipo de FUE{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{% endblock %}
+{% block content %}
+{# QA 5.a: nueva vista — listado de roles con nivel de FUE asignado #}
+<p>Listado de roles con su tipo de FUE asignado, importado de <strong>FUE_Rol.xlsx</strong>.</p>
+<p class="backLink"><a href="{{ url_for('licenses.index') }}">Volver al módulo Licencias</a></p>
+
+{% if roles %}
+<div class="filterBar" data-filter-scope="roles-fue-table">
+  <input class="filterBar__input" type="text" data-filter-field="q"
+         placeholder="Buscar rol o descripción...">
+  <select class="filterBar__select" data-filter-field="fue">
+    <option value="">Todos los tipos FUE</option>
+    <option value="ADV">GB Advanced Use</option>
+    <option value="CORE">GC Core Use</option>
+    <option value="SELF">GD Self-Service Use</option>
+    <option value="NONE">Sin tipo FUE</option>
+  </select>
+  <span class="filterBar__count" id="roles-fue-table-count"></span>
+</div>
+
+<table class="adminTable" id="roles-fue-table">
+  <thead>
+    <tr>
+      <th>Rol</th>
+      <th>Descripción</th>
+      <th>Tipo FUE</th>
+      <th>Ratio</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for role in roles %}
+    <tr data-filter-item
+        data-f-q="{{ (role.role_name ~ ' ' ~ role.description)|lower }}"
+        data-f-fue="{{ role.fue_type_code or 'NONE' }}">
+      <td><code>{{ role.role_name }}</code></td>
+      <td>{{ role.description or '—' }}</td>
+      <td>
+        {% set fc = role.fue_type_code or 'NONE' %}
+        <span class="fueBadge fueBadge--{{ fc|lower }}">
+          {{ fue_label_map.get(fc, fc) }}
+        </span>
+      </td>
+      <td>{{ role.ratio or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No hay roles importados. Importá FUE_Rol.xlsx en el módulo Licencias.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% if roles %}
+<p class="filterBar__empty isHidden" id="roles-fue-table-empty">Sin roles para el filtro seleccionado.</p>
+{% endif %}
+
+{% else %}
+<p>No hay roles con FUE importados. Importá <strong>FUE_Rol.xlsx</strong> en
+<a href="{{ url_for('licenses.importar') }}">Importar datos SAP</a>.</p>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/table-filters.js') }}"></script>
+{% endblock %}

@@ -23,14 +23,15 @@ from app.sod.engine import (
     build_role_crit,
     build_role_segregation_proposals,
     build_user_risk,
-    get_parent_role_alerts,
     get_sod_summary,
     invalidate_analysis_cache,
     run_analysis,
     validate_new_role,
 )
 from app.sod.importers import (
+    _propagate_composite_tcodes,
     import_agr_1251,
+    import_agr_1252,
     import_agr_buffi,
     import_agr_define,
     import_agr_hier,
@@ -40,13 +41,16 @@ from app.sod.importers import (
     import_sui_tm_mm_app,
     import_tstct,
     import_usr02,
+    import_usvar,
 )
 from app.sod.models import (
     SapChipCatalog,
     SapFioriAppReg,
     SapFioriIdTcode,
+    SapOrgLevelDesc,
     SapRoleAssignment,
     SapRoleHierNode,
+    SapRoleOrgLevel,
     SapRoleTableAuth,
     SapRoleTcode,
     SapTcodeDescription,
@@ -101,6 +105,8 @@ def importar():
         "PB_C_CHIPM": ("Apps Fiori (chips) por catalogo/grupo", import_pb_c_chipm),
         "SUI_TM_MM_APP": ("Registro de apps Fiori (SUI_TM_MM_APP)", import_sui_tm_mm_app),
         "USR02": ("Estado de cuenta SAP (bloqueo, ultimo login)", import_usr02),
+        "AGR_1252": ("Niveles organizacionales por rol", import_agr_1252),
+        "USVAR": ("Descripciones de niveles organizacionales (opcional)", import_usvar),
     }
 
     scan_resultado = None
@@ -128,6 +134,10 @@ def importar():
                         AuditLog.log("sod_import", username=current_user.username,
                                      details=f"{item['tipo']}: {item['count']} filas importadas ({item['filename']}, vía carpeta)")
 
+                # Propagar tcodes de hijos a padres una vez terminada la importación
+                # por carpeta (cubre casos donde PB_C_CHIPM no estaba disponible).
+                _propagate_composite_tcodes()
+
                 ok_count = sum(1 for item in scan_resultado if item["ok"])
                 err_count = sum(1 for item in scan_resultado if item["found"] and not item["ok"])
                 missing_count = sum(1 for item in scan_resultado if not item["found"])
@@ -153,6 +163,10 @@ def importar():
             label, importer_func = importers[tipo]
             try:
                 count = importer_func(archivo.stream)
+                # Siempre propagar tcodes de hijos a padres tras cualquier import.
+                # Si el importer ya llamó a recompute_fiori_tcodes (que incluye
+                # la propagación), esta llamada extra es un no-op rápido.
+                _propagate_composite_tcodes()
             except Exception as exc:
                 flash(f"Error al importar {label}: {exc}", "error")
                 return redirect(url_for("sod.importar"))
@@ -174,6 +188,8 @@ def importar():
         "fiori_tcodes": SapRoleTcode.query.filter_by(source="FIORI").count(),
         "usr02": SapUserStatus.query.count(),
         "usr02_bloqueados": SapUserStatus.query.filter_by(bloqueado=True).count(),
+        "agr_1252": SapRoleOrgLevel.query.count() if _table_exists("sap_role_org_levels") else 0,
+        "usvar": SapOrgLevelDesc.query.count() if _table_exists("sap_org_level_descriptions") else 0,
     }
     carpeta = AppSetting.get(SAP_IMPORT_FOLDER_SETTING, "")
     return render_template("sod/import.html", stats=stats, carpeta=carpeta, scan_resultado=scan_resultado)
@@ -186,7 +202,8 @@ def resultados():
     """Resultados del analisis SOD: conflictos activos por regla, agrupados
     por nivel de severidad. Se recalcula en cada visita (no se persiste el
     resultado, solo las reglas/excepciones que lo determinan)."""
-    results = run_analysis()
+    # QA 1.a: No mostrar reglas que no tengan conflictos activos
+    results = [item for item in run_analysis() if item["conflicted_users"]]
     modulos = sorted({item["rule"].modulo for item in results if item["rule"].modulo})
     return render_template("sod/results.html", results=results, modulos=modulos)
 
@@ -201,6 +218,7 @@ def exportar_resultados():
     exportar lo que tambien se tiene permiso de ver en pantalla (/resultados)."""
     results = run_analysis()
 
+    # QA 1.b: El CSV solo exporta datos SOD (no incluye campos FUE, que son de auditoria)
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(["Regla", "Modulo", "Nivel", "Descripcion", "Usuario"])
@@ -301,11 +319,15 @@ def validar():
 def validar_roles_json():
     """Lista de roles conocidos (asignados y/o con tcodes) para el picker
     del simulador de validacion de nuevo rol. Excluye roles padre (compuestos)
-    porque no tienen tcodes propios y no generan conflictos SOD directos."""
+    porque no tienen tcodes propios y no generan conflictos SOD directos.
+    QA: solo se muestran roles hijos (no compuestos) que ademas empiecen
+    con "Z" (convencion SAP para roles de cliente/custom)."""
     _, r2u = build_maps()
     role_tcodes_roles = {row[0] for row in db.session.query(SapRoleTcode.role_name).distinct()}
     parent_roles = _parent_role_names()
     todos = (set(r2u.keys()) | role_tcodes_roles) - parent_roles
+    # QA: filtrar solo roles que empiecen con Z
+    todos = {r for r in todos if r.upper().startswith("Z")}
     return jsonify(sorted(todos))
 
 
@@ -327,13 +349,24 @@ def matriz():
     excl = request.args.get("excl", "")
     if excl not in MATRIX_EXCLUDE_OPTIONS:
         excl = ""
-    rows = build_matrix_rows(f_user, f_rol, f_tc, excl)
 
-    contexto = dict(rows=rows[:2000], total=len(rows), f_user=f_user, f_rol=f_rol, f_tc=f_tc, excl=excl)
+    # QA 3.b: arrancar sin datos en la grilla; solo ejecutar build_matrix_rows si hay filtros activos
+    has_filters = bool(f_user or f_rol or f_tc or excl)
+    if has_filters:
+        rows = build_matrix_rows(f_user, f_rol, f_tc, excl)
+    else:
+        rows = []
+
+    contexto = dict(
+        rows=rows[:2000], total=len(rows),
+        f_user=f_user, f_rol=f_rol, f_tc=f_tc, excl=excl,
+        filtered=has_filters,  # QA 3.b: distingue estado inicial de búsqueda sin resultados
+    )
 
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return render_template("sod/_matriz_rows.html", **contexto)
-    contexto["parent_alerts"] = get_parent_role_alerts()
+    # QA: el banner aparte de roles padre con asignacion propia se quito;
+    # ahora build_matrix_rows() ya integra esas filas marcadas con warn=True
     return render_template("sod/matriz.html", **contexto)
 
 
@@ -529,6 +562,7 @@ def reglas_exportar_excel():
     """Exporta la matriz de reglas SOD a Excel (formato pensado para
     Auditoria Interna, igual que el boton 'Exportar Excel' del original).
     Requiere ademas can_manage_sod_config, igual que la pantalla /reglas."""
+    # QA 4.c: Exportar Excel debe incluir todos los campos de la regla SOD
     rules = SodRule.query.order_by(SodRule.id).all()
 
     wb = openpyxl.Workbook()

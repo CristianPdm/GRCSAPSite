@@ -239,6 +239,114 @@
   color: var(--color-success);
 }
 
+/* QA 6.a: badge FUE dentro del detalle de rol */
+.roleBadge--fue {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.roleBadge--fue.fueBadge--adv  { background-color: var(--color-error-bg);   color: var(--color-error); }
+.roleBadge--fue.fueBadge--core { background-color: var(--color-warning-bg);  color: var(--color-warning); }
+.roleBadge--fue.fueBadge--self { background-color: var(--color-info-bg);     color: var(--color-info); }
+.roleBadge--fue.fueBadge--none { background-color: var(--color-bg);          color: var(--color-text-muted); }
+
+/* QA: badges de cabecera que reemplazan a la seccion de tarjetas de stats
+   (Apps Fiori + Transacciones clasicas sumadas en un solo numero, y
+   cantidad de usuarios vigentes) */
+.roleBadge--txcount {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.roleBadge--users {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+/* ------ Nivel organizacional (AGR_1252.xlsx/USVAR.xlsx) ------ */
+/* QA: colapsable (<details>), cerrado por defecto -- el usuario lo abre
+   solo si necesita investigar el detalle. Mismo patron de disclosure que
+   .parentRoleAlert (sod.module.css) y .sidebarGroup. */
+.rolesOrgLevels {
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.rolesOrgLevels__summary {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  list-style: none;
+  padding: 2px 0;
+}
+
+.rolesOrgLevels__summary::-webkit-details-marker {
+  display: none;
+}
+
+.rolesOrgLevels__summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 10px;
+  transition: transform var(--transition-fast);
+}
+
+.rolesOrgLevels[open] > .rolesOrgLevels__summary::before {
+  transform: rotate(90deg);
+}
+
+.rolesOrgLevels[open] > .rolesOrgLevels__summary {
+  margin-bottom: var(--spacing-sm);
+}
+
+.rolesOrgLevels__count {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.rolesOrgLevels__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rolesOrgLevels__item {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.rolesOrgLevels__code {
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 140px;
+}
+
+.rolesOrgLevels__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rolesOrgLevels__value {
+  font-family: monospace;
+  font-size: 12px;
+  background-color: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  padding: 2px 10px;
+  color: var(--color-text);
+}
+
 /* ------ Stats bar ------ */
 .rolesStats {
   display: flex;
@@ -385,6 +493,13 @@
   max-width: 260px;
 }
 
+/* QA: separacion del badge FUE cuando se muestra junto a la descripcion
+   del rol en la tabla de "roles con esta transaccion" */
+.rolesTcodeTable__desc .roleBadge--fue {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .rolesTcodeTable__subtitulo {
   display: block;
   font-size: 11.5px;
@@ -473,10 +588,10 @@
   text-decoration: underline;
 }
 
+/* QA: listado en tabla (usuario, nombre, tipo FUE) en vez de chips en
+   línea -- ver adminTable (admin-table.module.css) para el resto del
+   estilo de la tabla */
 .rolesUsers__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
   margin-top: var(--spacing-sm);
 }
 
@@ -488,6 +603,13 @@
   font-size: 12px;
   font-family: monospace;
   color: var(--color-text);
+}
+
+.rolesUsers__rowName {
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 /* ------ Empty state ------ */

@@ -7,7 +7,7 @@ Permite consultar:
 """
 import re
 
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required
 
 from app.decorators import permission_required
@@ -22,7 +22,12 @@ from app.sod.models import (
     SapFioriAppReg,
     SapTcodeDescription,
     SapRoleAssignment,
+    SapRoleOrgLevel,
+    SapOrgLevelDesc,
 )
+# QA 6.a: importar LicenseRole para mostrar FUE de cada rol
+# QA: importar LicenseUser para mostrar FUE de cada usuario asignado
+from app.licenses.models import LicenseRole, LicenseUser
 
 # ---------------------------------------------------------------------------
 # Helpers internos
@@ -167,6 +172,71 @@ def _get_role_tcodes(role_name):
     return result
 
 
+def _table_exists(table_name):
+    """Comprueba si una tabla existe en la BD (para migraciones aún no
+    aplicadas, ej. sap_role_org_levels antes de correr
+    migrate_add_org_levels.py)."""
+    from sqlalchemy import inspect
+    insp = inspect(db.engine)
+    return table_name in insp.get_table_names()
+
+
+def _get_role_org_levels(role_name):
+    """Devuelve los niveles organizacionales (AGR_1252.xlsx) de un rol, a
+    nivel cabecera: a qué áreas de la organización (centro, sociedad,
+    org. de compras, etc.) da acceso el rol, además de sus transacciones.
+
+    Agrupa por nivel organizacional (`nivel_codigo`, ej. '$WERKS'): un
+    mismo nivel puede tener varios valores autorizados (varias filas en
+    AGR_1252), y el valor puede venir vacío -- esas filas sin valor se
+    omiten porque no aportan información para mostrar.
+
+    Cada elemento del resultado:
+        codigo      : str  (ej. '$WERKS')
+        descripcion : str  (USVAR.xlsx, si está importado; si no, vacío)
+        valores     : list[str]  (uno por fila con valor; un rango
+                                   valor_bajo/valor_alto se muestra como
+                                   "bajo - alto")
+    """
+    if not _table_exists("sap_role_org_levels"):
+        return []
+
+    rows = SapRoleOrgLevel.query.filter_by(role_name=role_name).all()
+    if not rows:
+        return []
+
+    desc_map = {}
+    if _table_exists("sap_org_level_descriptions"):
+        codigos = {r.nivel_codigo for r in rows}
+        desc_map = {
+            d.codigo: d.descripcion
+            for d in SapOrgLevelDesc.query.filter(SapOrgLevelDesc.codigo.in_(codigos)).all()
+        }
+
+    valores_por_nivel = {}
+    orden = []
+    for r in rows:
+        bajo = (r.valor_bajo or "").strip()
+        alto = (r.valor_alto or "").strip()
+        if not bajo and not alto:
+            continue  # nivel definido en el rol pero sin valor cargado
+        valor = f"{bajo} - {alto}" if bajo and alto else (bajo or alto)
+        if r.nivel_codigo not in valores_por_nivel:
+            valores_por_nivel[r.nivel_codigo] = []
+            orden.append(r.nivel_codigo)
+        if valor not in valores_por_nivel[r.nivel_codigo]:
+            valores_por_nivel[r.nivel_codigo].append(valor)
+
+    return [
+        {
+            "codigo": codigo,
+            "descripcion": desc_map.get(codigo, ""),
+            "valores": sorted(valores_por_nivel[codigo]),
+        }
+        for codigo in sorted(orden)
+    ]
+
+
 def _get_role_info(role_name):
     """Devuelve dict con descripción, parent, hijos y usuarios del rol."""
     desc_row = SapRoleDescription.query.filter_by(role_name=role_name).first()
@@ -184,12 +254,29 @@ def _get_role_info(role_name):
     )
     users = [r.username for r in users_q.order_by(SapRoleAssignment.username).all()]
 
+    # QA: nombre completo y tipo de FUE de cada usuario (FUE_Users.xlsx),
+    # para mostrar junto al usuario en el listado de "Usuarios asignados"
+    fue_by_user = {
+        u.username: u
+        for u in LicenseUser.query.filter(LicenseUser.username.in_(users)).all()
+    } if users else {}
+    users_detail = [
+        {
+            "username": username,
+            "full_name": fue_by_user[username].full_name if username in fue_by_user else "",
+            "fue_code": fue_by_user[username].fue_type_code if username in fue_by_user else None,
+            "fue_label": fue_by_user[username].fue_type_raw if username in fue_by_user else None,
+        }
+        for username in users
+    ]
+
     return {
         "role_name": role_name,
         "description": description,
         "parent": parent,
         "is_composite": len(children) > 0,
         "children": children,
+        "users_detail": users_detail,
         "users": users,
         "user_count": len(users),
     }
@@ -233,6 +320,19 @@ def _get_roles_with_tcode(tcode):
 
     all_roles = direct_roles | fiori_roles
 
+    # Incluir roles padres (compuestos) de los roles encontrados.
+    # Ej: si ZSD_VENTAS tiene F0797, también mostrar Z_COMP_VENTAS.
+    if all_roles:
+        parent_roles = {
+            r.parent_role
+            for r in SapRoleDescription.query.filter(
+                SapRoleDescription.role_name.in_(all_roles),
+                SapRoleDescription.parent_role.isnot(None),
+            ).all()
+            if r.parent_role
+        }
+        all_roles = all_roles | parent_roles
+
     # Información adicional por rol
     if not all_roles:
         return []
@@ -262,9 +362,17 @@ def _get_roles_with_tcode(tcode):
         if r.parent_role
     }
 
+    # QA: tipo de FUE de cada rol (FUE_Rol.xlsx), para mostrar junto a la
+    # descripcion en la tabla de "roles con esta transaccion".
+    fue_map = {
+        r.role_name: r
+        for r in LicenseRole.query.filter(LicenseRole.role_name.in_(all_roles)).all()
+    }
+
     result = []
     for role in all_roles:
         d = desc_map.get(role)
+        fue_row = fue_map.get(role)
         result.append({
             "role_name": role,
             "description": d.description if d else "",
@@ -273,6 +381,8 @@ def _get_roles_with_tcode(tcode):
             "user_count": user_counts.get(role, 0),
             "via_fiori": role in fiori_roles,
             "via_agr1251": role in direct_roles,
+            "fue_code": fue_row.fue_type_code if fue_row else None,
+            "fue_label": fue_row.fue_type_raw if fue_row else None,
         })
 
     result.sort(key=lambda x: x["role_name"])
@@ -295,7 +405,14 @@ def index():
 @login_required
 @permission_required("can_view_rolesdb")
 def rol_detail(role_name):
-    """Detalle de un rol: sus transacciones, tipo (Fiori/Clásica) y usuarios."""
+    """Detalle de un rol: sus transacciones, tipo (Fiori/Clásica) y usuarios.
+    QA: solo se permite consultar roles hijos (no compuestos/padre) que
+    ademas empiecen con "Z" (convencion SAP para roles de cliente/custom)."""
+    es_padre = SapRoleDescription.query.filter_by(parent_role=role_name).first() is not None
+    if not role_name.upper().startswith("Z") or es_padre:
+        flash('Solo se pueden consultar roles hijos que empiecen con "Z".', "error")
+        return redirect(url_for("rolesdb.index"))
+
     info = _get_role_info(role_name)
     tcodes = _get_role_tcodes(role_name)
 
@@ -309,6 +426,17 @@ def rol_detail(role_name):
     fiori_count = sum(1 for t in tcodes if t["es_fiori"])
     clasica_count = len(tcodes) - fiori_count
 
+    # QA 6.a: obtener tipo de FUE del rol desde la tabla de licencias (FUE_Rol.xlsx)
+    license_row = LicenseRole.query.filter_by(role_name=role_name).first()
+    fue_info = {
+        "code": license_row.fue_type_code if license_row else None,
+        "label": license_row.fue_type_raw if license_row else None,
+    }
+
+    # QA: niveles organizacionales del rol (AGR_1252.xlsx/USVAR.xlsx), a
+    # nivel cabecera -- ver docstring de _get_role_org_levels
+    org_levels = _get_role_org_levels(role_name)
+
     return render_template(
         "rolesdb/rol.html",
         info=info,
@@ -316,6 +444,8 @@ def rol_detail(role_name):
         child_tcodes=child_tcodes,
         fiori_count=fiori_count,
         clasica_count=clasica_count,
+        fue_info=fue_info,  # QA 6.a
+        org_levels=org_levels,  # QA
     )
 
 
@@ -354,9 +484,19 @@ def tcode_search():
 @login_required
 @permission_required("can_view_rolesdb")
 def api_roles():
-    """JSON: lista de roles para autocompletar (max 50 resultados)."""
+    """JSON: lista de roles para autocompletar (max 50 resultados).
+
+    QA: solo se ofrecen roles hijos (no compuestos/padre) que ademas
+    empiecen con "Z" (convencion SAP para roles de cliente/custom)."""
     q = (request.args.get("q") or "").strip().upper()
-    query = SapRoleDescription.query
+    # Subquery: nombres de rol que actuan como padre de algun otro rol
+    parent_names = db.session.query(SapRoleDescription.parent_role).filter(
+        SapRoleDescription.parent_role.isnot(None)
+    ).distinct()
+    query = SapRoleDescription.query.filter(
+        SapRoleDescription.role_name.like("Z%"),
+        SapRoleDescription.role_name.notin_(parent_names),
+    )
     if q:
         query = query.filter(
             db.or_(

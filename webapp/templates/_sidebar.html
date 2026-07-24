@@ -29,7 +29,7 @@
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.usuarios_riesgo' }}" href="{{ url_for('sod.usuarios_riesgo') }}">Usuarios en riesgo</a>
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.roles_criticos' }}" href="{{ url_for('sod.roles_criticos') }}">Roles críticos</a>
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.segregacion' }}" href="{{ url_for('sod.segregacion') }}">Propuestas de segregación</a>
-        <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.validar' }}" href="{{ url_for('sod.validar') }}">Validar nuevo rol</a>
+        <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.validar' }}" href="{{ url_for('sod.validar') }}">Validar Asignación de Rol</a>
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.matriz' }}" href="{{ url_for('sod.matriz') }}">Matriz Usuario x Rol x TCode</a>
         {% set sod_admin = current_user.has_permission('can_manage_sod_config') %}
         {% if current_user.has_permission('can_import_sap_data') %}
@@ -37,7 +37,7 @@
           <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.importar' }}" href="{{ url_for('sod.importar') }}">Importar datos SAP</a>
         {% endif %}
         {% if sod_admin %}
-          <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep in ['sod.reglas', 'sod.regla_nueva', 'sod.regla_editar', 'sod.reglas_importar', 'sod.reglas_restablecer', 'sod.reglas_log'] }}" href="{{ url_for('sod.reglas') }}">Matriz de reglas</a>
+          <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep in ['sod.reglas', 'sod.regla_nueva', 'sod.regla_editar', 'sod.reglas_importar', 'sod.reglas_restablecer', 'sod.reglas_log'] }}" href="{{ url_for('sod.reglas') }}">Matriz SOD</a>
           <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'sod.excepciones' }}" href="{{ url_for('sod.excepciones') }}">Excepciones</a>
         {% endif %}
       </div>
@@ -54,6 +54,8 @@
       <div class="sidebarGroup__items">
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'licenses.index' }}" href="{{ url_for('licenses.index') }}">Resumen</a>
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'licenses.usuarios' }}" href="{{ url_for('licenses.usuarios') }}">Usuarios y tipo FUE</a>
+        {# QA 5.a: nuevo enlace — Roles y tipo de FUE #}
+        <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'licenses.roles_fue' }}" href="{{ url_for('licenses.roles_fue') }}">Roles y tipo de FUE</a>
         <a class="sidebarSubLink {{ 'sidebarSubLink--active' if ep == 'licenses.fue_optimizacion' }}" href="{{ url_for('licenses.fue_optimizacion') }}">Optimización FUE</a>
         {% if current_user.has_permission('can_import_sap_data') %}
           <span class="sidebarSubLink__divider">Administración</span>

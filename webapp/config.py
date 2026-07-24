@@ -18,7 +18,7 @@ class Config:
     # Nombre mostrado en la barra de navegacion. Se configura por cliente
     # via variable de entorno APP_NAME en el archivo .env del servidor.
     APP_NAME = os.environ.get("APP_NAME", "Licencias & GRC")
-    APP_VERSION = "2.2"
+    APP_VERSION = "3.0"
 
 
     # Offset horario respecto a UTC, usado solo para MOSTRAR fechas/horas

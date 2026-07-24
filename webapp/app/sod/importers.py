@@ -20,9 +20,11 @@ from app.sod.models import (
     SapChipCatalog,
     SapFioriAppReg,
     SapFioriIdTcode,
+    SapOrgLevelDesc,
     SapRoleAssignment,
     SapRoleDescription,
     SapRoleHierNode,
+    SapRoleOrgLevel,
     SapRoleTableAuth,
     SapRoleTcode,
     SapTcodeDescription,
@@ -716,9 +718,66 @@ def recompute_fiori_tcodes():
             count += 1
 
     db.session.commit()
+
+    # 5. Propagar tcodes de roles hijos a roles padres
+    _propagate_composite_tcodes()
+
     invalidate_analysis_cache()
     return count
 
+
+def _propagate_composite_tcodes():
+    """Propaga tcodes (AGR_1251, AGR_TCODES, FIORI) de roles hijos a sus
+    roles padres (compuestos).
+
+    En SAP los roles compuestos no tienen entradas directas en AGR_1251 —
+    los tcodes viven en los roles simples (hijos). Esta función crea entradas
+    source='COMPOSITE' en SapRoleTcode para que el padre aparezca en:
+      - búsquedas de RolesDB por transacción
+      - matriz SOD (build_maps ya expande vía parent_role, pero tener los
+        registros explícitos evita dependencias del orden de carga)
+
+    Se ejecuta al final de recompute_fiori_tcodes() y también puede
+    llamarse manualmente desde la ruta de importación.
+    """
+    # Borrar propagaciones previas para recalcular desde cero
+    SapRoleTcode.query.filter_by(source="COMPOSITE").delete()
+    db.session.flush()
+
+    # Construir mapa padre → [hijos]
+    children_by_parent: dict[str, list[str]] = {}
+    for row in SapRoleDescription.query.filter(
+        SapRoleDescription.parent_role.isnot(None)
+    ).all():
+        children_by_parent.setdefault(row.parent_role, []).append(row.role_name)
+
+    if not children_by_parent:
+        db.session.commit()
+        return 0
+
+    added = 0
+    for parent, children in children_by_parent.items():
+        # Todos los tcodes de los hijos (cualquier source)
+        child_tcodes = {
+            r.tcode
+            for r in db.session.query(SapRoleTcode.tcode)
+            .filter(SapRoleTcode.role_name.in_(children))
+            .distinct()
+            .all()
+        }
+        # Tcodes que el padre ya tiene directamente (no duplicar)
+        existing = {
+            r.tcode
+            for r in db.session.query(SapRoleTcode.tcode)
+            .filter_by(role_name=parent)
+            .all()
+        }
+        for tcode in child_tcodes - existing:
+            db.session.add(SapRoleTcode(role_name=parent, tcode=tcode, source="COMPOSITE"))
+            added += 1
+
+    db.session.commit()
+    return added
 
 
 def import_sui_tm_mm_app(file_stream):
@@ -915,6 +974,103 @@ def import_usr02(file_stream):
             valido_hasta=valido_hasta,
             ultimo_login=ultimo_login,
         ))
+        count += 1
+
+    db.session.commit()
+    return count
+
+
+def import_agr_1252(file_stream):
+    """AGR_1252.xlsx: valores de nivel organizacional (variables USVAR,
+    ej. $WERKS, $BUKRS) asignados a cada rol. Columnas reales: Rol(0),
+    ID(1), Nivel org.(2), Valor de la autorizacion BAJO(3), Valor de la
+    autorizacion ALTO(4, encabezado duplicado -- igual patron que
+    AGR_1251.xlsx). Una fila por cada valor autorizado (o por cada
+    extremo de un rango); el valor puede venir vacio."""
+    headers, rows = read_excel_matrix(file_stream)
+
+    role_idx = column_index(headers, ["ROL"])
+    nivel_idx = column_index(headers, ["NIVEL ORG"])
+    valor_indices = column_indices(headers, ["VALOR DE LA AUTORIZACION", "VALOR AUTORIZACION"])
+
+    if role_idx is None or nivel_idx is None or not valor_indices:
+        raise ValueError(
+            "AGR_1252.xlsx: estructura de columnas inesperada (Rol/Nivel org./Valor de la autorizacion). "
+            "Columnas detectadas: " + ", ".join(headers[:10])
+        )
+
+    # Bajo = primer indice encontrado, Alto = segundo (si el export lo trae)
+    bajo_idx = valor_indices[0]
+    alto_idx = valor_indices[1] if len(valor_indices) > 1 else None
+
+    SapRoleOrgLevel.query.delete()
+
+    count = 0
+    for row in rows:
+        if role_idx >= len(row) or nivel_idx >= len(row):
+            continue
+        role_name = row[role_idx]
+        nivel = row[nivel_idx]
+        if not role_name or not nivel:
+            continue
+
+        valor_bajo = ""
+        if bajo_idx is not None and bajo_idx < len(row) and row[bajo_idx] is not None:
+            valor_bajo = str(row[bajo_idx]).strip()
+
+        valor_alto = ""
+        if alto_idx is not None and alto_idx < len(row) and row[alto_idx] is not None:
+            valor_alto = str(row[alto_idx]).strip()
+
+        db.session.add(SapRoleOrgLevel(
+            role_name=str(role_name).strip(),
+            nivel_codigo=str(nivel).strip(),
+            valor_bajo=valor_bajo,
+            valor_alto=valor_alto,
+        ))
+        count += 1
+
+    db.session.commit()
+    invalidate_analysis_cache()
+    return count
+
+
+def import_usvar(file_stream):
+    """USVAR.xlsx: catalogo de variables de nivel organizacional (tabla
+    USVAR estandar). Columnas: Variable(0), Longitud del string de
+    valores en byte(1), Texto(2). Solo se usa como texto descriptivo
+    junto al codigo tecnico en el detalle de rol (ver SapRoleOrgLevel)."""
+    headers, rows = read_excel_matrix(file_stream)
+
+    var_idx = column_index(headers, ["VARIABLE"])
+    texto_idx = column_index(headers, ["TEXTO"])
+
+    if var_idx is None:
+        raise ValueError(
+            "USVAR.xlsx: estructura de columnas inesperada (Variable). "
+            "Columnas detectadas: " + ", ".join(headers[:10])
+        )
+
+    SapOrgLevelDesc.query.delete()
+
+    count = 0
+    seen = set()
+    for row in rows:
+        if var_idx >= len(row):
+            continue
+        codigo = row[var_idx]
+        if not codigo:
+            continue
+        codigo = str(codigo).strip()
+        if codigo in seen:
+            continue
+        seen.add(codigo)
+
+        descripcion = ""
+        if texto_idx is not None and texto_idx < len(row) and row[texto_idx] is not None:
+            descripcion = str(row[texto_idx]).strip()
+
+        db.session.add(SapOrgLevelDesc(codigo=codigo, descripcion=descripcion))
         count += 1
 
     db.session.commit()

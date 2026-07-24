@@ -462,7 +462,10 @@ def _collapse_matrix_rows(rows, excluir):
     confundir."""
     field = _MATRIX_EXCLUDE_FIELD.get(excluir)
     if not field:
-        return rows
+        # QA: reordenar para que las filas de advertencia (roles padre con
+        # asignacion propia, agregadas al final por build_matrix_rows)
+        # queden intercaladas en su posicion natural en vez de al final.
+        return sorted(rows, key=lambda r: (r["user"], r["rol"], r["tc"]))
 
     remaining = [k for k in ("user", "rol", "tc") if k != field]
     collapsed = {}
@@ -473,9 +476,16 @@ def _collapse_matrix_rows(rows, excluir):
             item = {k: row[k] for k in remaining}
             item["desc"] = row["desc"] if field != "tc" else ""
             item["_valores"] = set()
+            # QA: preservar el flag de warning (rol padre con asignacion
+            # propia) al colapsar filas -- si al menos una fila colapsada
+            # es una fila de advertencia, la combinacion resultante tambien
+            # se marca como advertencia.
+            item["warn"] = False
             collapsed[key] = item
             order.append(key)
         collapsed[key]["_valores"].add(row[field])
+        if row.get("warn"):
+            collapsed[key]["warn"] = True
 
     result = []
     for key in order:
@@ -485,6 +495,42 @@ def _collapse_matrix_rows(rows, excluir):
 
     result.sort(key=lambda r: tuple(r[k] for k in remaining))
     return result
+
+
+def _parent_role_alert_rows(f_user, f_rol, f_tc, tcode_desc):
+    """QA: filas de advertencia para roles padre con asignacion propia
+    indebida (ver get_parent_role_alerts), integradas directamente en la
+    Matriz en lugar de un banner aparte. Cada fila se marca con warn=True
+    para que la plantilla muestre un icono junto al nombre del rol, en la
+    fila del usuario afectado. Solo se consideran alertas de roles Z
+    (mismo criterio que el resto de la matriz: roles hijos que empiecen
+    con "Z"); en la practica los roles padre tambien suelen empezar con Z,
+    pero se filtra igual por consistencia."""
+    rows = []
+    for a in get_parent_role_alerts():
+        rol = a["rol"]
+        if not rol.upper().startswith("Z"):
+            continue
+        if f_rol and not _matches(rol, f_rol):
+            continue
+        tcodes = a["tcodes"] or [""]
+        for user in a["usuarios"]:
+            if f_user and not _matches(user, f_user):
+                continue
+            for tcode in tcodes:
+                if tcode:
+                    if not _matches_tcode(tcode, f_tc):
+                        continue
+                elif f_tc:
+                    continue
+                rows.append({
+                    "user": user,
+                    "rol": rol,
+                    "tc": tcode,
+                    "desc": tcode_desc.get(tcode, "") if tcode else "",
+                    "warn": True,
+                })
+    return rows
 
 
 def build_matrix_rows(f_user="", f_rol="", f_tc="", excluir=""):
@@ -506,9 +552,15 @@ def build_matrix_rows(f_user="", f_rol="", f_tc="", excluir=""):
     Los roles padre/compuestos (ver _parent_role_names) no generan fila
     propia: por diseno no deberian tener tcodes propios, asi que listarlos
     aqui solo confundiria (la autorizacion real ya se ve en las filas de
-    sus roles hijos). Si alguno tiene tcodes propios de forma anomala, se
-    omite igual y queda reflejado en get_parent_role_alerts()."""
-    _, r2u = build_maps()
+    sus roles hijos). QA: si alguno tiene tcodes o usuarios propios de
+    forma anomala, ahora se agrega igual como fila (marcada con warn=True)
+    en lugar de solo quedar reflejado en el banner aparte de
+    get_parent_role_alerts() -- ver _parent_role_alert_rows().
+
+    QA: solo se muestran roles hijos (no compuestos) que empiecen con "Z"
+    (convencion SAP para roles de cliente/custom); roles sin ese prefijo
+    quedan fuera de la matriz."""
+    tc2r, r2u = build_maps()
     user_to_roles = _user_to_roles_map(r2u)
     role_tcodes = _role_tcode_map()
     tcode_desc = {d.tcode: d.description for d in SapTcodeDescription.query.all()}
@@ -520,11 +572,72 @@ def build_matrix_rows(f_user="", f_rol="", f_tc="", excluir=""):
     if excluir not in MATRIX_EXCLUDE_OPTIONS:
         excluir = ""
 
+    has_wildcard = lambda s: "*" in s or "?" in s
+
+    # ── Short-circuit: pre-filtrar candidatos antes del triple loop ──────────
+    #
+    # Sin pre-filtro el loop es O(usuarios × roles × tcodes): con 200 usuarios,
+    # 50 roles cada uno y 300 tcodes por rol = 3M iteraciones por búsqueda.
+    # Si hay filtros exactos (sin wildcards) se puede acotar el espacio:
+    #
+    #   f_tc exacto → tc2r[tcode] da directamente el conjunto de roles que lo
+    #     tienen; solo iteramos esos roles y sus usuarios, no todos.
+    #   f_user exacto → filtrar user_to_roles a un solo usuario.
+    #   f_rol exacto → filtrar roles a candidatos con ese nombre exacto.
+
+    # Pre-filtro por tcode exacto (el más selectivo: puede pasar de millones
+    # de iteraciones a cientos).
+    if f_tc and not has_wildcard(f_tc):
+        # roles_with_tc: solo los roles que tienen exactamente este tcode.
+        # BUG FIX: f_tc está en lowercase (via .lower() arriba) pero tc2r
+        # usa claves en uppercase (convención SAP). Convertir a uppercase
+        # para el lookup; usar la forma canónica en el output de la fila.
+        f_tc_upper = f_tc.upper()
+        # QA: ademas de excluir roles padre, solo se consideran roles Z
+        roles_with_tc = {
+            r for r in (tc2r.get(f_tc_upper, set()) - parent_roles)
+            if r.upper().startswith("Z")
+        }
+        if not roles_with_tc:
+            rows = []
+        else:
+            # Construir user_to_roles restringido a esos roles
+            restricted: dict[str, set] = {}
+            for role in roles_with_tc:
+                if f_rol and not _matches(role, f_rol):
+                    continue
+                for username in r2u.get(role, set()):
+                    if f_user and not _matches(username, f_user):
+                        continue
+                    restricted.setdefault(username, set()).add(role)
+            # BUG FIX: sorted() sobre dicts falla en Python 3 sin key explícita
+            rows = sorted(
+                ({"user": u, "rol": rol, "tc": f_tc_upper, "desc": tcode_desc.get(f_tc_upper, ""), "warn": False}
+                 for u, roles in restricted.items()
+                 for rol in sorted(roles)),
+                key=lambda r: (r["user"], r["rol"]),
+            )
+        # QA: agregar filas de advertencia de roles padre con asignacion
+        # propia (antes un banner aparte, ahora integrado en la matriz)
+        rows = rows + _parent_role_alert_rows(f_user, f_rol, f_tc, tcode_desc)
+        return _collapse_matrix_rows(rows, excluir)
+
+    # Pre-filtro por usuario exacto (sin wildcards): acota a 1 usuario.
+    # BUG FIX: f_user está en lowercase pero user_to_roles tiene claves
+    # en uppercase (nombres de usuario SAP). Comparar en lowercase.
+    if f_user and not has_wildcard(f_user):
+        candidate_users = {u: rs for u, rs in user_to_roles.items() if u.lower() == f_user}
+    else:
+        candidate_users = user_to_roles
+
     rows = []
-    for username, roles in user_to_roles.items():
+    for username, roles in candidate_users.items():
         if not _matches(username, f_user):
             continue
+        # QA: solo roles hijos (ya excluidos los padre) que empiecen con Z
         for role_name in sorted(roles - parent_roles):
+            if not role_name.upper().startswith("Z"):
+                continue
             if not _matches(role_name, f_rol):
                 continue
             for tcode in sorted(role_tcodes.get(role_name, set())):
@@ -535,9 +648,13 @@ def build_matrix_rows(f_user="", f_rol="", f_tc="", excluir=""):
                     "rol": role_name,
                     "tc": tcode,
                     "desc": tcode_desc.get(tcode, ""),
+                    "warn": False,
                 })
 
     rows.sort(key=lambda r: (r["user"], r["rol"], r["tc"]))
+    # QA: agregar filas de advertencia de roles padre con asignacion propia
+    # (antes un banner aparte, ahora integrado en la matriz)
+    rows = rows + _parent_role_alert_rows(f_user, f_rol, f_tc, tcode_desc)
     return _collapse_matrix_rows(rows, excluir)
 
 

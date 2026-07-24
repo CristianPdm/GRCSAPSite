@@ -3,6 +3,12 @@
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/rolesdb.module.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/filters.module.css') }}">
+{# QA: fueBadge (colores por tipo FUE) esta definido en licenses.module.css;
+   se reutiliza aqui para el listado de usuarios asignados #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/licenses.module.css') }}">
+{# QA: adminTable (encabezado Usuario/Nombre/Tipo FUE) para el listado
+   de usuarios asignados, mismo formato que Licencias > Usuarios y tipo FUE #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/admin-table.module.css') }}">
 {% endblock %}
 {% block content %}
 <p class="backLink"><a href="{{ url_for('rolesdb.index') }}">← Volver al buscador</a></p>
@@ -23,41 +29,51 @@
       {% else %}
         <span class="roleBadge roleBadge--simple">Rol simple</span>
       {% endif %}
-      {% if fiori_count > 0 %}
-      <span class="roleBadge roleBadge--fiori">{{ fiori_count }} Fiori</span>
+      {# QA: cantidad de transacciones + apps Fiori en un solo numero
+         (reemplaza a las tarjetas de stats separadas, ver mas abajo) #}
+      <span class="roleBadge roleBadge--txcount">{{ fiori_count + clasica_count }} transacción{{ 'es' if (fiori_count + clasica_count) != 1 else '' }}</span>
+      {# QA 6.a: mostrar tipo FUE del rol si está disponible en FUE_Rol.xlsx #}
+      {% if fue_info and fue_info.code and fue_info.code != 'NONE' %}
+      <span class="roleBadge roleBadge--fue fueBadge--{{ fue_info.code|lower }}" title="{{ fue_info.label }}">FUE: {{ fue_info.code }}</span>
+      {% elif fue_info and fue_info.label %}
+      <span class="roleBadge roleBadge--fue" title="{{ fue_info.label }}">FUE: Sin tipo</span>
       {% endif %}
-      {% if clasica_count > 0 %}
-      <span class="roleBadge roleBadge--clasica">{{ clasica_count }} Clasica(s)</span>
-      {% endif %}
+      {# QA: cantidad de usuarios vigentes, tambien como badge del header #}
+      <span class="roleBadge roleBadge--users">{{ info.user_count }} usuario{{ 's' if info.user_count != 1 else '' }}</span>
     </div>
+    {# QA: niveles organizacionales del rol (AGR_1252.xlsx/USVAR.xlsx) --
+       a que areas de la organizacion da acceso el rol, ademas de sus
+       transacciones. Un nivel puede tener varios valores, o no tener
+       ninguno cargado (en ese caso no se muestra, ver _get_role_org_levels).
+       QA: colapsable -- cerrado por defecto, el usuario lo abre solo si
+       necesita investigar el detalle. #}
+    {% if org_levels %}
+    <details class="rolesOrgLevels">
+      <summary class="rolesOrgLevels__summary">
+        Nivel organizacional <span class="rolesOrgLevels__count">({{ org_levels|length }})</span>
+      </summary>
+      <div class="rolesOrgLevels__list">
+        {% for nivel in org_levels %}
+        <div class="rolesOrgLevels__item">
+          <span class="rolesOrgLevels__code" title="{{ nivel.descripcion }}">
+            {{ nivel.descripcion or nivel.codigo }}
+          </span>
+          <span class="rolesOrgLevels__values">
+            {% for v in nivel.valores %}<span class="rolesOrgLevels__value">{{ v }}</span>{% endfor %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   </div>
 </div>
 
-<!-- Stats rápidas -->
-<div class="rolesStats">
-  <div class="rolesStats__item">
-    <span class="rolesStats__value">{{ tcodes|length }}</span>
-    <span class="rolesStats__label">Transacciones totales</span>
-  </div>
-  <div class="rolesStats__item">
-    <span class="rolesStats__value">{{ fiori_count }}</span>
-    <span class="rolesStats__label">Apps Fiori</span>
-  </div>
-  <div class="rolesStats__item">
-    <span class="rolesStats__value">{{ clasica_count }}</span>
-    <span class="rolesStats__label">Transacciones clásicas</span>
-  </div>
-  <div class="rolesStats__item">
-    <span class="rolesStats__value">{{ info.user_count }}</span>
-    <span class="rolesStats__label">Usuarios vigentes</span>
-  </div>
-  {% if info.is_composite %}
-  <div class="rolesStats__item">
-    <span class="rolesStats__value">{{ info.children|length }}</span>
-    <span class="rolesStats__label">Roles hijos</span>
-  </div>
-  {% endif %}
-</div>
+{# QA: se quita la sección de tarjetas de stats (Apps Fiori / Transacciones
+   clásicas / Usuarios vigentes): ese dato ahora se muestra como badges en
+   el encabezado del rol (tipo de rol, cantidad de transacciones+apps en un
+   solo número, tipo de FUE y cantidad de usuarios), justo debajo del
+   detalle del rol padre. #}
 
 <!-- Roles hijos (si es compuesto) -->
 {% if info.is_composite %}
@@ -95,7 +111,7 @@
     <tr>
       <th>TCode / App</th>
       <th>Tipo</th>
-      <th>Descripcion</th>
+      <th>Descripción</th>
     </tr>
   </thead>
   <tbody>
@@ -110,7 +126,7 @@
         {% if t.es_fiori %}
         <span class="tcodeTypeBadge tcodeTypeBadge--fiori">Fiori</span>
         {% else %}
-        <span class="tcodeTypeBadge tcodeTypeBadge--clasica">Clasica</span>
+        <span class="tcodeTypeBadge tcodeTypeBadge--clasica">Clásica</span>
         {% endif %}
       </td>
       <td class="rolesTcodeTable__desc">
@@ -140,10 +156,34 @@
     <p class="rolesUsers__title">Usuarios asignados ({{ info.user_count }})</p>
     <button class="rolesUsers__toggle" id="toggle-users" type="button">Mostrar</button>
   </div>
+  {# QA: tabla vertical (uno debajo del otro) con usuario, nombre completo
+     y tipo de FUE (FUE_Users.xlsx) -- mismo formato que Licencias >
+     Usuarios y tipo FUE #}
   <div class="rolesUsers__list" id="users-list" style="display:none">
-    {% for u in info.users %}
-    <span class="rolesUsers__chip">{{ u }}</span>
-    {% endfor %}
+    <table class="adminTable">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Tipo FUE</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in info.users_detail %}
+        <tr>
+          <td class="rolesUsers__rowName">{{ u.username }}</td>
+          <td>{{ u.full_name or '—' }}</td>
+          <td>
+            {% if u.fue_code and u.fue_code != 'NONE' %}
+            <span class="fueBadge fueBadge--{{ u.fue_code|lower }}" title="{{ u.fue_label }}">{{ u.fue_label or u.fue_code }}</span>
+            {% else %}
+            <span class="fueBadge fueBadge--none">Sin tipo FUE</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 {% endif %}
@@ -159,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (btn && list) {
     btn.addEventListener("click", function () {
       var hidden = list.style.display === "none";
-      list.style.display = hidden ? "flex" : "none";
+      list.style.display = hidden ? "block" : "none";
       btn.textContent = hidden ? "Ocultar" : "Mostrar";
     });
   }

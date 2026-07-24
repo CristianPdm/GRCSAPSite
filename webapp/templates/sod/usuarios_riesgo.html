@@ -37,11 +37,7 @@
     <option value="SELF">GD Self-Service Use</option>
     <option value="NONE">Sin tipo FUE</option>
   </select>
-  <select class="filterBar__select" data-filter-field="bloqueo">
-    <option value="">Bloqueados y activos</option>
-    <option value="BLOQUEADO">Solo bloqueados</option>
-    <option value="ACTIVO">Solo activos (no bloqueados)</option>
-  </select>
+  {# QA 2.a: filtro de bloqueo eliminado; los usuarios bloqueados no deben exportarse #}
   <span class="filterBar__count" id="user-risk-list-count"></span>
 </div>
 {% endif %}
@@ -61,8 +57,7 @@
        data-f-q="{{ (row.user ~ ' ' ~ row.nombre)|lower }}"
        data-f-nivel="{{ row.mx }}"
        data-f-ia="{{ ia_tokens|join(' ') }}"
-       data-f-fue="{{ fue_shown_code or 'NONE' }}"
-       data-f-bloqueo="{{ 'BLOQUEADO' if row.bloqueado else ('ACTIVO' if row.has_user_status else '') }}">
+       data-f-fue="{{ fue_shown_code or 'NONE' }}">
     <details>
       <summary class="userRiskRow__summary">
         <span class="userRiskRow__user">{{ row.user }}</span>
@@ -77,16 +72,7 @@
         {% endif %}
       </summary>
       <div class="userRiskRow__detail">
-        {% if row.has_user_status %}
-          <div class="userRiskRow__detailLine">
-            <span class="userRiskRow__detailLabel">Estado de cuenta (SAP)</span>
-            <span>{{ row.lock_label }}</span>
-          </div>
-          <div class="userRiskRow__detailLine">
-            <span class="userRiskRow__detailLabel">Último login (SAP)</span>
-            <span>{{ row.ultimo_login_sap.strftime('%d/%m/%Y') if row.ultimo_login_sap else 'Sin registro' }}</span>
-          </div>
-        {% endif %}
+        {# QA 2.a: bloque "Estado de cuenta (SAP)" eliminado; no mostrar usuarios bloqueados en riesgo #}
         {% if row.has_license_data %}
           <div class="userRiskRow__detailLine">
             <span class="userRiskRow__detailLabel">Nombre</span><span>{{ row.nombre or '—' }}</span>

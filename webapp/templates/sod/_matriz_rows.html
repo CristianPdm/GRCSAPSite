@@ -3,7 +3,12 @@
    página (sod/matriz.html) como la respuesta AJAX de búsqueda incremental
    (GET /sod/matriz con header X-Requested-With), para no duplicar el
    marcado entre ambos casos. #}
+{# QA 3.b: grilla arranca vacía; filtered=False indica que no se aplicó ningún filtro todavía #}
 <div id="mx-results">
+  {% if not filtered|default(true) %}
+  {# Estado inicial: sin filtros activos #}
+  <p class="mxEmpty">Ingresá filtros y presioná <strong>Filtrar</strong> para buscar.</p>
+  {% else %}
   <p class="mxResultsCount" id="mx-count">
     {{ total|default(0) }} fila{{ 's' if total != 1 else '' }}{{ ' (mostrando las primeras 2000)' if total > 2000 else '' }}
   </p>
@@ -22,7 +27,16 @@
       {% for row in rows %}
       <tr>
         {% if excl != 'usuario' %}<td class="mxTable__user">{{ row.user }}</td>{% endif %}
-        {% if excl != 'rol' %}<td class="mxTable__rol">{{ row.rol }}</td>{% endif %}
+        {% if excl != 'rol' %}
+        <td class="mxTable__rol">
+          {{ row.rol }}
+          {# QA: warning inline -- rol padre con asignacion propia indebida
+             (antes un banner aparte); icono con tooltip junto al rol #}
+          {% if row.warn %}
+          <span class="mxTable__warnIcon" data-tooltip="Rol padre con asignación propia indebida: por diseño no debería tener tcodes ni usuarios asignados directamente. Revisar en SAP.">⚠</span>
+          {% endif %}
+        </td>
+        {% endif %}
         {% if excl != 'tcode' %}
         <td><span class="mxTable__tc">{{ row.tc }}</span></td>
         <td class="mxTable__desc">{{ row.desc or '—' }}</td>
@@ -33,7 +47,8 @@
     </tbody>
   </table>
   {% else %}
-  <p class="mxEmpty">Sin filas para los filtros seleccionados. Importa AGR_USERS/AGR_1251 en SOD para habilitar esta matriz.</p>
+  <p class="mxEmpty">Sin filas para los filtros seleccionados. Verificá que los archivos AGR_USERS/AGR_1251 estén importados.</p>
   {% endif %}
   </div>
+  {% endif %}
 </div>

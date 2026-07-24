@@ -28,16 +28,6 @@
     {% if desc %}
     <p class="rolesHeader__desc">{{ desc }}</p>
     {% endif %}
-    {% if titulo_fiori %}
-    <p class="rolesHeader__desc rolesHeader__descItalic">{{ titulo_fiori }}</p>
-    {% endif %}
-    <div class="rolesHeader__badges">
-      {% if es_fiori %}
-      <span class="roleBadge roleBadge--fiori">App Fiori</span>
-      {% else %}
-      <span class="roleBadge roleBadge--clasica">Transaccion Clasica</span>
-      {% endif %}
-    </div>
   </div>
 </div>
 
@@ -94,7 +84,13 @@
         <span class="tcodeTypeBadge tcodeTypeBadge--clasica">Simple</span>
         {% endif %}
       </td>
-      <td class="rolesTcodeTable__desc">{{ r.description or '—' }}</td>
+      <td class="rolesTcodeTable__desc">
+        {{ r.description or '—' }}
+        {# QA: tipo de FUE del rol junto a la descripcion #}
+        {% if r.fue_code and r.fue_code != 'NONE' %}
+        <span class="roleBadge roleBadge--fue fueBadge--{{ r.fue_code|lower }}" title="{{ r.fue_label }}">FUE: {{ r.fue_code }}</span>
+        {% endif %}
+      </td>
       <td class="rolesTcodeTable__userCount">{{ r.user_count }}</td>
     </tr>
     {% endfor %}
@@ -106,9 +102,9 @@
 <div class="rolesEmpty">
   <div class="rolesEmpty__icon">🔍</div>
   <p class="rolesEmpty__text">
-    La transaccion <strong>{{ tcode }}</strong> no existe o no esta asignada a ningun rol.<br>
-    Verificar que AGR_1251 y/o PB_C_CHIPM esten importados,<br>
-    y que el codigo este bien escrito (distingue mayusculas).
+    La transacción <strong>{{ tcode }}</strong> no existe o no está asignada a ningún rol.<br>
+    Verificar que AGR_1251 y/o PB_C_CHIPM estén importados,<br>
+    y que el código esté bien escrito (distingue mayúsculas).
   </p>
 </div>
 {% endif %}{# endif roles #}

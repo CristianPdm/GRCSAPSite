@@ -10,7 +10,7 @@ from app.licenses.importers import import_fue_roles, import_fue_users
 from app.licenses.models import LicenseRole, LicenseUser
 from app.licenses.rules import FUE_LABEL, INACTIVITY_THRESHOLD_DAYS
 from app.models import AppSetting, AuditLog
-from app.sod.models import SapUserStatus
+from app.sod.models import SapRoleAssignment, SapUserStatus
 from app.utils.sap_import import SAP_IMPORT_FOLDER_SETTING, last_import_date, scan_import_folder
 
 
@@ -163,3 +163,34 @@ def fue_optimizacion():
     return render_template(
         "licenses/fue_optimizacion.html", opt=opt, license_updated=last_import_date(LicenseUser)
     )
+
+
+@bp.route("/roles-fue")
+@login_required
+@permission_required("can_view_licenses")
+def roles_fue():
+    """QA 5.a: Listado de roles con su nivel de FUE asignado (FUE_Rol.xlsx).
+    Permite ver qué tipo de licencia genera cada rol sin necesidad de
+    cruzar con usuarios -- útil para auditoría de catálogo de roles."""
+    # QA 5.a: nueva vista Roles y tipo de FUE.
+    # Solo roles que empiecen con Z (convención SAP para roles cliente)
+    # y que tengan al menos una asignación de usuario vigente en AGR_USERS.
+    # BUG FIX: with_entities solo proyectaba role_name, pero el filtro
+    # intentaba leer row.valid_to (no incluido en la query) -> AttributeError.
+    # Se agrega valid_to a la proyección para poder filtrar vigencia.
+    today = date.today()
+    roles_con_usuarios = {
+        row.role_name
+        for row in SapRoleAssignment.query.with_entities(
+            SapRoleAssignment.role_name, SapRoleAssignment.valid_to
+        ).all()
+        if (row.valid_to is None or row.valid_to >= today)
+    }
+    roles = [
+        r for r in LicenseRole.query.filter(
+            LicenseRole.role_name.like("Z%")
+        ).order_by(LicenseRole.role_name).all()
+        if r.role_name in roles_con_usuarios
+    ]
+    fue_label_map = FUE_LABEL
+    return render_template("licenses/roles_fue.html", roles=roles, fue_label_map=fue_label_map)

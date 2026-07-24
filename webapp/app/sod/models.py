@@ -229,6 +229,44 @@ class SapUserStatus(db.Model):
         return "Bloqueado" if self.bloqueado else "No bloqueado"
 
 
+class SapRoleOrgLevel(db.Model):
+    """Valores de nivel organizacional (objetos de autorizacion con
+    variable USVAR, ej. $WERKS, $BUKRS) asignados a un rol, importados de
+    AGR_1252.xlsx. Definen a que areas de la organizacion (centro,
+    sociedad, organizacion de compras, etc.) da acceso el rol, ademas de
+    las transacciones propias del rol (AGR_1251/AGR_HIER).
+
+    Un mismo nivel organizacional (`nivel_codigo`) puede repetirse varias
+    veces para un rol -- una fila por cada valor autorizado, o por cada
+    extremo de un rango (valor_bajo/valor_alto) -- y el valor puede venir
+    vacio (nivel definido en el rol pero sin restriccion cargada)."""
+
+    __tablename__ = "sap_role_org_levels"
+
+    id = db.Column(db.Integer, primary_key=True)
+    role_name = db.Column(db.String(80), nullable=False, index=True)
+    nivel_codigo = db.Column(db.String(40), nullable=False)  # ej. '$WERKS', '$BUKRS'
+    valor_bajo = db.Column(db.String(80), default="")
+    valor_alto = db.Column(db.String(80), default="")
+    imported_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.Index("ix_role_org_level_role", "role_name", "nivel_codigo"),)
+
+
+class SapOrgLevelDesc(db.Model):
+    """Descripcion de cada variable de nivel organizacional (columna
+    'Variable' de USVAR.xlsx, ej. '$WERKS' -> 'Centro'), usada para
+    mostrar un texto legible junto al codigo tecnico en el detalle de
+    rol (ver SapRoleOrgLevel)."""
+
+    __tablename__ = "sap_org_level_descriptions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(40), unique=True, nullable=False, index=True)
+    descripcion = db.Column(db.String(120), default="")
+    imported_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class SodRule(db.Model):
     """Regla de la matriz SOD (conflicto entre dos grupos de transacciones).
 
